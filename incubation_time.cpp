@@ -28,9 +28,7 @@ unsigned long seed;
 int *time_index1,*time_index2,NumIt;
 double  **times2;
 double  kappa,lambda,crate,p;
-
-void    data(int n);
-double  gammadens(double x, double gamma1, double gamma2);
+s
 double  criterion(int m, double alpha[]);
 int     hooke(int m, double startpt[], double endpt[], double rho, double eps,
                 int itermax, double f(int m, double alpha[]));
