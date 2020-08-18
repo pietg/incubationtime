@@ -39,7 +39,7 @@ List NPMLE(DataFrame input)
     int endpoint;
     double *grid;
     
-    NumIt=1000;
+    NumIt=10000;
     
     endpoint=140;
     
@@ -62,7 +62,7 @@ List NPMLE(DataFrame input)
     
     // number of parameters to be estimated
 
-    m=43;
+    m=14;
     
     tt = new int[m+1];
     pp = new double[m+1];

@@ -87,8 +87,8 @@ List Weibull(DataFrame input)
     alpha       = new double[m];
     alpha_init  = new double[m];
     
-    alpha_init[0]=2.0;
-    alpha_init[1]=0.005;
+    alpha_init[0]=3.0;
+    alpha_init[1]=0.02;
     
     iter=hooke(m,alpha_init,alpha,rho,eps,nIterations,criterion);
     
