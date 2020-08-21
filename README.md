@@ -1,6 +1,6 @@
 # incubationtime
 
-As a start we analyze the data of travelers of Wuhan, as analyzed by the Dutch Centre for Infectious Disease Control (RIVM): https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.5.2000062 A sample of 88 people was used in the estimation of the distribution of the incubation time for Covid 19. The RIVM used (low dimensional) parametric maximum likelihood to analyze these data using, e.g., the Weibull distribution as a possible distribution for the incubation time. We use nonparametric maximum likelihood instead.
+As a start we analyze the data of travelers from Wuhan, as analyzed by the Dutch Centre for Infectious Disease Control (RIVM): https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.5.2000062 A sample of 88 people was used in the estimation of the distribution of the incubation time for Covid-19. The RIVM used (low dimensional) parametric maximum likelihood to analyze these data using, e.g., the Weibull distribution as a possible distribution for the incubation time. We use nonparametric maximum likelihood instead.
 
 The original data file is original_data_Wuhan.tsv. This was transformed into a data file transformed_data_Wuhan.txt. This, in turn, was transformed into the input file inputdata_Wuhan.txt, where the time, spent in Wuhan, was shifted making the left point equal to zero. For traveler number 67, who apparently had a connecting flight, the duration of stay in Wuhan was changed from 0 to 1 day.
 
@@ -10,5 +10,5 @@ The parametric and nonparametric method are both present in analysis_EM.R and an
 
 The nonparametric maximum likelihood estimator is computed by the EM algorithm and by the much more efficient iterative convex minorant algorithm. For the EM method, one has to run analysis_EM.R and for the iterative convex minorant algorithm one has to use analysis_ICM.R.
 
-This repository complements a paper in "Nieuw Archief voor Wiskunde" ("New archive of Mathematics", a journal for the Dutch mathematicians), discussing the different ways of estimating the distribution of the incubation time.
+This repository complements a paper in "Nieuw Archief voor Wiskunde" ("New archive of Mathematics", a journal for the Dutch mathematicians), discussing the different ways of estimating the distribution of the incubation time. More details about the methods and another model for the incubation time distribution can be found in incubation_time.pdf.
 
