@@ -1,5 +1,6 @@
 //
-//  The Weibull maximum likelihood method for estimating the distribution of the incubation time
+//  The iterative convex minaorant algorithm for computing the MLE for estimating
+//  the distribution of the incubation time
 //
 //  Created by Piet Groeneboom on 16/07/2020.
 //  Copyright (c) 2020 Piet Groeneboom. All rights reserved.
@@ -19,14 +20,6 @@ using namespace std;
 using namespace Rcpp;
 
 #define SQR(x) ((x)*(x))
-
-typedef struct
-{
-    double alpha, beta;
-}
-weight_t;
-
-weight_t weight(double x);
 
 int n,n2;
 double alpha;
@@ -166,7 +159,7 @@ List NPMLE()
      }
 
     
-    // make the list for the output, containing the two estimates and the log likelihood
+    // make the list for the output
     
     List out = List::create(Named("MLE")=out1,Named("mean")=out2,Named("locmax")=out3,Named("SMLE")=out4,Named("dens")=out5);
 
@@ -270,7 +263,7 @@ double criterion(double yy[])
     sum -= log(yy[1])+3*log(yy[2])+4*log(yy[3])+2*log(yy[6])+2*log(yy[2]-yy[1])
             +log(yy[3]-yy[1])+log(yy[4]-yy[3])+log(yy[4]-yy[2])+log(yy[5]-yy[4])+
             +log(yy[5]-yy[2])+2*log(yy[6]-yy[3])+log(yy[6]-yy[5])+9*log(1-yy[1])
-            +4*log(1-yy[2])+5*log(1-yy[3])+6*log(1-yy[4])+3*log(1-yy[5])+3*log(1-yy[6]);
+            +4*log(1-yy[2])+3*log(1-yy[3])+6*log(1-yy[4])+3*log(1-yy[5])+3*log(1-yy[6]);
     
     return sum;
 }
@@ -279,7 +272,7 @@ void gradient(double yy[], double grad[])
 {
     grad[1] = 1/yy[1]-9/(1-yy[1])-2/(yy[2]-yy[1])-1/(yy[3]-yy[1]);
     grad[2] = 3/yy[2]-4/(1-yy[2])+2/(yy[2]-yy[1])-1/(yy[4]-yy[2])-1/(yy[5]-yy[2]);
-    grad[3] = 4/yy[3]-5/(1-yy[3])+1/(yy[3]-yy[1])-1/(yy[4]-yy[3])-1/(yy[6]-yy[3]);
+    grad[3] = 4/yy[3]-3/(1-yy[3])+1/(yy[3]-yy[1])-1/(yy[4]-yy[3])-1/(yy[6]-yy[3]);
     grad[4] = 1/(yy[4]-yy[2])-6/(1-yy[4])+1/(yy[4]-yy[3])-1/(yy[5]-yy[4]);
     grad[5] = 1/(yy[5]-yy[2])-3/(1-yy[5])+1/(yy[5]-yy[4])-1/(yy[6]-yy[5]);
     grad[6] = 2/(yy[5]-yy[2])-3/(1-yy[6])+2/(yy[6]-yy[3])+1/(yy[6]-yy[5]);
@@ -290,7 +283,7 @@ void weights(double yy[], double w[])
 {
    w[1] = 1/SQR(yy[1])+9/SQR(1-yy[1])+2/SQR(yy[2]-yy[1])+1/SQR(yy[3]-yy[1]);
    w[2] = 3/SQR(yy[2])+4/SQR(1-yy[2])+2/SQR(yy[2]-yy[1])+1/SQR(yy[4]-yy[2])+1/SQR(yy[5]-yy[2]);
-   w[3] = 4/SQR(yy[3])+5/SQR(1-yy[3])+1/SQR(yy[3]-yy[1])+1/SQR(yy[4]-yy[3])+1/SQR(yy[6]-yy[3]);
+   w[3] = 4/SQR(yy[3])+3/SQR(1-yy[3])+1/SQR(yy[3]-yy[1])+1/SQR(yy[4]-yy[3])+1/SQR(yy[6]-yy[3]);
    w[4] = 1/SQR(yy[4]-yy[2])+6/SQR(1-yy[4])+1/SQR(yy[4]-yy[3])+1/SQR(yy[5]-yy[4]);
    w[5] = 1/SQR(yy[5]-yy[2])+3/SQR(1-yy[5])+1/SQR(yy[5]-yy[4])+1/SQR(yy[6]-yy[5]);
    w[6] = 2/SQR(yy[5]-yy[2])+3/SQR(1-yy[6])+2/SQR(yy[6]-yy[3])+1/SQR(yy[6]-yy[5]);
@@ -367,7 +360,7 @@ double golden(double (*f)(double))
 
 double bdf(double A, double B, int m, int t[], double p[], double u, double h)
 {
-    int            k;
+    int           k;
     double        t1,t2,t3,sum;
     
     
