@@ -203,3 +203,4 @@ library(Rcpp)#
 plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
 	lines(t,u,lwd=2, lty=1,col="blue")#
 	lines(t1,u1,lwd=2, lty=2,col="red")
+B1

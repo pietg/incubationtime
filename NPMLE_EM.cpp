@@ -87,8 +87,10 @@ List NPMLE(DataFrame input)
     alpha       = new double[m+1];
     alpha_init  = new double[m+1];
     
-    for (i=1;i<=m;i++)
-        alpha_init[i] = 1.0/m;
+    alpha_init[0]=alpha_init[1]=alpha_init[2]=0;
+    
+    for (i=3;i<=m;i++)
+        alpha_init[i] = 1.0/(m-2);
     
     for (j=1;j<=NumIt;j++)
     {
