@@ -5,7 +5,6 @@
 //  Created by Piet Groeneboom on 16/07/2020.
 //  Copyright (c) 2020 Piet Groeneboom. All rights reserved.
 
-//
 
 #include <stdlib.h>
 #include <iostream>
@@ -21,10 +20,10 @@ using namespace Rcpp;
 
 #define SQR(x) ((x)*(x))
 
-int n,n2;
-double alpha;
-int *tt;
-double  *dens,*pp,*grid,*F,*MLE,*SMLE,h;
+int     n,n1,n2,ngrid,nloc,*tt,**N;
+double  alpha,*F;
+int     *data1,*data2;
+double  *pp,*grid,*MLE,*SMLE,*dens;
 double  *cumw,*cs,*yy,*yy_new,*grad,*w;
 double  inprod,partsum;
 
@@ -49,52 +48,102 @@ double K(double x);
 
 // [[Rcpp::export]]
 
-List NPMLE()
+List NPMLE(DataFrame input)
 {
-    int     i,ngrid;
+    int     i,j;
     double  a,sum,max,locmax,endpoint=14;
 
     // number of parameters to be estimated
     
-    n=6;
+    n1=6;
     
     // number of points needed for MLE, extended to the left (by two points)
     // and to the right (by one point, where it becomes equal to 1)
     
     n2=9;
     
-     F =  new double[n+1];
-     MLE = new double[n2+1];
-     pp = new double[n+2];
-     tt = new int[n+2];
-     
-     ngrid=140;
+    DataFrame DF = Rcpp::DataFrame(input);
+    IntegerVector data01 = DF["V1"];
+    IntegerVector data02 = DF["V2"];
+    
+    // determine the sample size
+    
+    n = (int)data01.size();
+    
+    data1 = new int[n];
+    data2 = new int[n];
+    
+    for (i=0;i<n;i++)
+    {
+        data1[i]=data01[i];
+        data2[i]=data02[i];
+    }
+    
+    F =  new double[n1+2];
+    MLE = new double[n1+4];
+    pp = new double[n1+2];
+    tt = new int[n1+2];
+      
+    cumw = new double[n1+1];
+    cs = new double[n1+1];
+    yy = new double[n1+2];
+    yy_new = new double[n1+2];
+    grad = new double[n1+1];
+    w = new double[n1+1];
+    
+    ngrid=140;
 
-     grid = new double[ngrid+1];
-     SMLE = new double[ngrid+1];
-     dens = new double[ngrid+1];
+    grid = new double[ngrid+1];
+    SMLE = new double[ngrid+1];
+    dens = new double[ngrid+1];
+    
+    for (i=0;i<=ngrid;i++)
+        grid[i] = i*0.1;
      
-     for (i=0;i<=ngrid;i++)
-         grid[i] = i*0.1;
+    N = new int *[n1+2];
+    for (i=0;i<n1+2;i++)
+        N[i] = new int[n1+2];
+    
+    for (i=0;i<n1+2;i++)
+    {
+        for (j=0;j<n1+2;j++)
+            N[i][j]=0;
+    }
+    
+    for (i=0;i<n;i++)
+    {
+        if (data2[i]<=8)
+        {
+            if (data1[i]<=2)
+                N[0][data2[i]-2]++;
+            else
+            {
+                if (data2[i]>2 && data2[i]<=8)
+                    N[data1[i]-2][data2[i]-2]++;
+            }
+        }
+    }
+    
+    for (i=0;i<n;i++)
+    {
+        if (data2[i]>8 && data1[i]>2)
+                N[data1[i]-2][7]++;
+    }
      
-     cumw = new double[n+1];
-     cs = new double[n+1];
-     yy = new double[n+1];
-     yy_new = new double[n+1];
-     grad = new double[n+1];
-     w = new double[n+1];
-     
-     for (i=1;i<=n;i++)
+    for (i=1;i<=n1;i++)
          tt[i]=i+2;
      
-     for (i=0;i<=n;i++)
-         F[i]=i*1.0/(n+1);
+    for (i=0;i<=n1;i++)
+         F[i]=i*1.0/(n1+1);
+    
+    yy[0]=yy_new[0]=0;
+    yy[n1+1]=yy_new[n1+1]=1;
      
-     isoreg(yy,F,cumw,grad,w);
+    isoreg(yy,F,cumw,grad,w);
      
      MLE[0]=MLE[1]=MLE[2]=0;
     
-     for (i=1;i<=n;i++)
+     for (i=1;i<=n1;i++)
          MLE[i+2] = F[i];
     
     MLE[n2]=1;
@@ -111,16 +160,16 @@ List NPMLE()
     out1(n2+1,1)=1;
     
     pp[0]=0;
-    for (i=1;i<=n;i++)
+    for (i=1;i<=n1;i++)
         pp[i] = F[i]-F[i-1];
-    for (i=1;i<=n;i++)
+    for (i=1;i<=n1;i++)
         tt[i] = i+2;
     
-    pp[n+1]=1-F[n];
-    tt[n+1]=n+3;
+    pp[n1+1]=1-F[n1];
+    tt[n1+1]=n1+3;
     
     sum=0;
-    for (i=1;i<=n+1;i++)
+    for (i=1;i<=n1+1;i++)
         sum += tt[i]*pp[i];
     
     double out2 = sum;
@@ -129,8 +178,8 @@ List NPMLE()
     
     for (i=0;i<=ngrid;i++)
     {
-        SMLE[i] = bdf(0.0,endpoint,n+1,tt,pp,grid[i],3.0);
-        dens[i]=dens_estimate(0.0,14.0,n+1,tt,pp,grid[i],4.0);
+        SMLE[i] = bdf(0.0,endpoint,n1+1,tt,pp,grid[i],3.0);
+        dens[i]=dens_estimate(0.0,14.0,n1+1,tt,pp,grid[i],4.0);
 
         a = dens[i];
         if (max<a)
@@ -165,22 +214,29 @@ List NPMLE()
 
     // free memory
     
+    for (i=0;i<n1+2;i++)
+        delete[] N[i];
+    delete[] N;
+        
     delete[] dens; delete[] pp; delete[] grid; delete[] F; delete[] MLE; delete[] SMLE;
-    delete[] cumw; delete[] cs; delete[] yy; delete[] grad; delete[] w, delete[] tt;
+    delete[] cumw; delete[] cs; delete[] yy; delete[] yy_new; delete[] grad; delete[] w, delete[] tt;
+    delete[] data1; delete[] data2;
     
     return out;
 }
 
 void isoreg(double yy[], double F[], double cumw[], double grad[], double w[])
 {
-    int i;
+    int i,iter;
     double tol=1.0e-10;
     
     gradient(F,grad);
     
-    while (fenchelviol(F,grad,tol,&inprod,&partsum))
+    iter=0;
+    while (fenchelviol(F,grad,tol,&inprod,&partsum) && iter<=1000)
     {
-        transfer(1,n,F,yy);
+        iter++;
+        transfer(1,n1,F,yy);
         gradient(yy,grad);
         weights(yy,w);
         cumsum(yy,cumw,grad,w);
@@ -191,139 +247,8 @@ void isoreg(double yy[], double F[], double cumw[], double grad[], double w[])
         else
             alpha=golden(f_alpha);
         
-        for (i=1;i<=n;i++)
+        for (i=1;i<=n1;i++)
             F[i] = alpha*yy[i]+(1-alpha)*F[i];
-    }
-}
-
-double f_alpha(double alpha)
-{
-    int i;
-    
-    for (i=1;i<=n;i++)
-        yy_new[i]=(1-alpha)*F[i]+alpha*yy[i];
-
-    return criterion(yy_new);
-}
-
-double f_alpha_prime(double alpha)
-{
-    int        i;
-    double    sum;
-    
-    sum=0;
-            
-    for (i=1;i<=n;i++)
-            sum -= (yy[i]-F[i])/((1-alpha)*F[i]+alpha*yy[i]);
-    
-    return sum;
-}
-
-
-int fenchelviol(double yy[], double grad[], double tol, double *inprod, double *partsum)
-{
-    double    sum,sum2;
-    int    i;
-    int    fenchelvioltemp;
-    
-    fenchelvioltemp = 0;
-    
-    sum=0;
-    sum2=0;
-    
-    for (i=1;i<=n;i++)
-    {
-        sum += grad[i];
-        if (sum < sum2)
-            sum2 = sum;
-    }
-    
-    sum=0;
-    for (i=1;i<=n;i++)
-        sum += grad[i]*yy[i];
-    
-    *inprod = sum;
-    *partsum = sum2;
-    
-    if ((fabs(sum) > tol) || (sum2 < -tol) ) fenchelvioltemp = 1;
-    
-    return fenchelvioltemp;
-}
-
-void transfer(int first, int last, double a[], double b[])
-{
-    int    i;
-    for (i = first; i<= last;i++)    b[i] = a[i];
-}
-
-double criterion(double yy[])
-{
-    double sum=0;
-    
-    sum -= log(yy[1])+3*log(yy[2])+4*log(yy[3])+2*log(yy[6])+2*log(yy[2]-yy[1])
-            +log(yy[3]-yy[1])+log(yy[4]-yy[3])+log(yy[4]-yy[2])+log(yy[5]-yy[4])+
-            +log(yy[5]-yy[2])+2*log(yy[6]-yy[3])+log(yy[6]-yy[5])+9*log(1-yy[1])
-            +4*log(1-yy[2])+3*log(1-yy[3])+6*log(1-yy[4])+3*log(1-yy[5])+3*log(1-yy[6]);
-    
-    return sum;
-}
-
-void gradient(double yy[], double grad[])
-{
-    grad[1] = 1/yy[1]-9/(1-yy[1])-2/(yy[2]-yy[1])-1/(yy[3]-yy[1]);
-    grad[2] = 3/yy[2]-4/(1-yy[2])+2/(yy[2]-yy[1])-1/(yy[4]-yy[2])-1/(yy[5]-yy[2]);
-    grad[3] = 4/yy[3]-3/(1-yy[3])+1/(yy[3]-yy[1])-1/(yy[4]-yy[3])-1/(yy[6]-yy[3]);
-    grad[4] = 1/(yy[4]-yy[2])-6/(1-yy[4])+1/(yy[4]-yy[3])-1/(yy[5]-yy[4]);
-    grad[5] = 1/(yy[5]-yy[2])-3/(1-yy[5])+1/(yy[5]-yy[4])-1/(yy[6]-yy[5]);
-    grad[6] = 2/(yy[5]-yy[2])-3/(1-yy[6])+2/(yy[6]-yy[3])+1/(yy[6]-yy[5]);
-}
-
-
-void weights(double yy[], double w[])
-{
-   w[1] = 1/SQR(yy[1])+9/SQR(1-yy[1])+2/SQR(yy[2]-yy[1])+1/SQR(yy[3]-yy[1]);
-   w[2] = 3/SQR(yy[2])+4/SQR(1-yy[2])+2/SQR(yy[2]-yy[1])+1/SQR(yy[4]-yy[2])+1/SQR(yy[5]-yy[2]);
-   w[3] = 4/SQR(yy[3])+3/SQR(1-yy[3])+1/SQR(yy[3]-yy[1])+1/SQR(yy[4]-yy[3])+1/SQR(yy[6]-yy[3]);
-   w[4] = 1/SQR(yy[4]-yy[2])+6/SQR(1-yy[4])+1/SQR(yy[4]-yy[3])+1/SQR(yy[5]-yy[4]);
-   w[5] = 1/SQR(yy[5]-yy[2])+3/SQR(1-yy[5])+1/SQR(yy[5]-yy[4])+1/SQR(yy[6]-yy[5]);
-   w[6] = 2/SQR(yy[5]-yy[2])+3/SQR(1-yy[6])+2/SQR(yy[6]-yy[3])+1/SQR(yy[6]-yy[5]);
-}
-
-
-void cumsum(double yy[], double cumw[], double grad[], double w[])
-{
-    int    j;
-    
-    cumw[0]=0;
-    cs[0]=0;
-    
-    for (j=1;j<=n;j++)
-    {
-        cumw[j] = cumw[j-1]+w[j];
-        cs[j]   = cs[j-1]+yy[j]*w[j]+grad[j];
-    }
-    
-}
-
-void convexminorant(double cumw[], double cs[], double yy[])
-{
-    int    i,j,m;
-    
-    yy[1] = cs[1]/cumw[1];
-    for (i=1+1;i<=n;i++)
-    {
-        yy[i] = (cs[i]-cs[i-1])/(cumw[i]-cumw[i-1]);
-        if (yy[i-1]>yy[i])
-        {
-            j = i;
-            while ((yy[j-1] > yy[i]) && (j>1))
-            {
-                j--;
-                yy[i] = (cs[i]-cs[j-1])/(cumw[i]-cumw[j-1]);
-                for (m=j;m<i;m++)
-                    yy[m] = yy[i];
-            }
-        }
     }
 }
 
@@ -357,10 +282,180 @@ double golden(double (*f)(double))
     
 }
 
+double f_alpha(double alpha)
+{
+    int i;
+    
+    for (i=1;i<=n1;i++)
+        yy_new[i]=(1-alpha)*F[i]+alpha*yy[i];
+
+    return criterion(yy_new);
+}
+
+double f_alpha_prime(double alpha)
+{
+    int        i;
+    double    sum;
+    
+    sum=0;
+            
+    for (i=1;i<=n1;i++)
+            sum -= (yy[i]-F[i])*grad[i]/((1-alpha)*F[i]+alpha*yy[i]);
+    
+    return sum;
+}
+
+
+int fenchelviol(double yy[], double grad[], double tol, double *inprod, double *partsum)
+{
+    double    sum,sum2;
+    int    i;
+    int    fenchelvioltemp;
+    
+    fenchelvioltemp = 0;
+    
+    sum=0;
+    sum2=0;
+    
+    for (i=1;i<=n1;i++)
+    {
+        sum += grad[i];
+        if (sum < sum2)
+            sum2 = sum;
+    }
+    
+    sum=0;
+    for (i=1;i<=n1;i++)
+        sum += grad[i]*yy[i];
+    
+    *inprod = sum;
+    *partsum = sum2;
+    
+    if ((fabs(sum) > tol) || (sum2 < -tol) ) fenchelvioltemp = 1;
+    
+    return fenchelvioltemp;
+}
+
+void transfer(int first, int last, double a[], double b[])
+{
+    int    i;
+    for (i = first; i<= last;i++)    b[i] = a[i];
+}
+
+double criterion(double yy[])
+{
+    int i,j;
+    double sum=0;
+    
+    for (i=0;i<=6;i++)
+    {
+        for (j=i+1;j<=7;j++)
+        {
+            if (N[i][j]>0)
+                sum -= N[i][j]*log(yy[j]-yy[i]);
+        }
+    }
+    
+    return sum;
+}
+
+void gradient(double yy[], double grad[])
+{
+    int i,j;
+    
+    for (i=1;i<=6;i++)
+        grad[i]=0;
+    
+    
+    for (i=1;i<=6;i++)
+    {
+        for (j=i+1;j<=7;j++)
+        {
+            if (N[i][j]>0)
+                grad[i] -= N[i][j]/(yy[j]-yy[i]);
+        }
+    }
+        
+    for (i=1;i<=6;i++)
+    {
+        for (j=0;j<i;j++)
+        {
+            if (N[j][i]>0)
+                grad[i] += N[j][i]/(yy[i]-yy[j]);
+        }
+    }
+}
+
+
+void weights(double yy[], double w[])
+{
+    int i,j;
+    
+    for (j=1;j<=6;j++)
+        w[j]=0;
+    
+    
+    for (i=1;i<=6;i++)
+    {
+        for (j=i+1;j<=7;j++)
+        {
+            if (N[i][j]>0)
+                w[i] += N[i][j]/SQR(yy[j]-yy[i]);
+        }
+    }
+        
+    for (i=1;i<=6;i++)
+    {
+        for (j=0;j<i;j++)
+        {
+            if (N[j][i]>0)
+                w[i] += N[j][i]/SQR(yy[i]-yy[j]);
+        }
+    }
+}
+
+
+void cumsum(double yy[], double cumw[], double grad[], double w[])
+{
+    int    j;
+    
+    cumw[0]=0;
+    cs[0]=0;
+    
+    for (j=1;j<=n1;j++)
+    {
+        cumw[j] = cumw[j-1]+w[j];
+        cs[j]   = cs[j-1]+yy[j]*w[j]+grad[j];
+    }
+    
+}
+
+void convexminorant(double cumw[], double cs[], double yy[])
+{
+    int    i,j,m;
+    
+    yy[1] = cs[1]/cumw[1];
+    for (i=1+1;i<=n1;i++)
+    {
+        yy[i] = (cs[i]-cs[i-1])/(cumw[i]-cumw[i-1]);
+        if (yy[i-1]>yy[i])
+        {
+            j = i;
+            while ((yy[j-1] > yy[i]) && (j>1))
+            {
+                j--;
+                yy[i] = (cs[i]-cs[j-1])/(cumw[i]-cumw[j-1]);
+                for (m=j;m<i;m++)
+                    yy[m] = yy[i];
+            }
+        }
+    }
+}
+
 
 double bdf(double A, double B, int m, int t[], double p[], double u, double h)
 {
-    int           k;
+    int            k;
     double        t1,t2,t3,sum;
     
     
@@ -394,7 +489,6 @@ double KK(double x)
     
     return y;
 }
-
 
 double K(double x)
 {
