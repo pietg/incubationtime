@@ -10,5 +10,5 @@ The parametric and nonparametric method are both present in analysis_EM.R and an
 
 The nonparametric maximum likelihood estimator is computed by the EM algorithm and by the much more efficient iterative convex minorant algorithm. For the EM method, one has to run analysis_EM.R and for the iterative convex minorant algorithm one has to use analysis_ICM.R. The two methods give exactly the same result, but the iterative convex minorant (ICM) algorithm needs much less iterations (<100) to get the result, with the necessary and sufficient (Fenchel) duality conditions satisfied at level 10^{-10}.
 
-This repository complements a paper in "Nieuw Archief voor Wiskunde" ("New Archive for Mathematics", a journal for the Dutch mathematicians), discussing the different ways of estimating the distribution of the incubation time. More details about the methods are given in incubation.pdf.
+This repository complements the paper http://www.nieuwarchief.nl/serie5/pdf/naw5-2020-21-3-181.pdf in "Nieuw Archief voor Wiskunde" ("New Archive for Mathematics", a journal for the Dutch mathematicians), discussing the different ways of estimating the distribution of the incubation time. More details about the methods are given in incubation.pdf.
 
