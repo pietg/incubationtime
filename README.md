@@ -12,3 +12,5 @@ The nonparametric maximum likelihood estimator is computed by the EM algorithm a
 
 This repository complements the paper http://www.nieuwarchief.nl/serie5/pdf/naw5-2020-21-3-181.pdf in "Nieuw Archief voor Wiskunde" ("New Archive for Mathematics", a journal for the Dutch mathematicians), discussing the different ways of estimating the distribution of the incubation time. More details about the methods are given in incubation.pdf.
 
+Note that the computation of the MLE does not need a choice of kernel or bandwidth. We chose bandwidths for the SMLE and density estimate somewhat arbitrarily (they should theoretically be of order n^{-1/5} and n^{-1/7}, respectively, where n is the sample size), but a method for automatic bandwidth choice will be added later, using an optimization criterion. Usually the choice of the kernel does not make much difference, as long as the kernel is sufficiently smooth at the boundary (for this reason we have a preference for the triweight above the Epanechnikov kernel). 
+
