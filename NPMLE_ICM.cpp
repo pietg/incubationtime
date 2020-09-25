@@ -2,16 +2,20 @@
 //  The iterative convex minaorant algorithm for computing the MLE for estimating
 //  the distribution of the incubation time
 //
-//  Created by Piet Groeneboom on 16/07/2020.
+//  Created by Piet Groeneboom on 23/09/2020.
 //  Copyright (c) 2020 Piet Groeneboom. All rights reserved.
 
 
-#include <stdlib.h>
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <iomanip>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
 #include <math.h>
 #include <time.h>
-#include <fstream>
+#include <random>
 #include <string.h>
 #include <Rcpp.h>
 
@@ -20,47 +24,51 @@ using namespace Rcpp;
 
 #define SQR(x) ((x)*(x))
 
-int     n,n1,n2,ngrid,nloc,*tt,**N;
-double  alpha,*F;
-int     *data1,*data2;
-double  *pp,*grid,*MLE,*SMLE,*dens;
-double  *cumw,*cs,*yy,*yy_new,*grad,*w;
+int     n,n1,ngrid,nloc,*loc,*tt,n1_bootstrap,*tt_bootstrap,max_obs1,min_obs2;
+double  alpha,*F,*F_bootstrap,*SMLE_bootstrap,*dens_bootstrap;
+int     *index1,*data0,*data1,*data2,*data3,*data1_bootstrap,*data2_bootstrap;
+double  a,b,*pp,*pp_bootstrap,*grid,*SMLE,*dens,*qq;
+double  *cumw,*cs,*yy,*yy_new,*grad,*w,*data_infection;
 double  inprod,partsum;
 
-double  f_alpha(double alpha);
-double  f_alpha_prime(double alpha);
-int     fenchelviol(double b[], double nabla[], double tol, double *inprod, double *partsum);
+int     compare (const void * a, const void * b);
+double  KK(double x);
+double  K(double x);
+double  dens_estimate(double A, double B,  int njumps, int jumploc[], double p[], double h, double u);
+double  bdf(double A, double B,  int m, int tt[], double p[], double h, double u);
+int     compare(const void *a, const void *b);
+void    sort_data(int n, int data0[]);
 
-double  criterion(double yy[]);
-void    convexminorant(double cumw[], double cs[], double yy[]);
-void    isoreg(double yy[], double F[], double cumw[], double grad[], double w[]);
-void    cumsum(double yy[], double cumw[], double grad[], double w[]);
-void    weights(double yy[], double w[]);
-void    gradient(double yy[], double grad[]);
+double  criterion(int n1, int **M, double yy[]);
+double  f_alpha(int n1, int **N, double alpha);
+double  f_alpha_prime(int n1, int **N, double alpha);
+int     fenchelviol(int n1, double yy[], double grad[], double tol, double *inprod, double *partsum);
+void    isoreg(int n1, int **N, double yy[], double F[], double cumw[], double grad[], double w[]);
+void    cumsum(int n1, double yy[], double cumw[], double grad[], double w[]);
+void    weights(int n1, int **N, double yy[], double w[]);
+void    gradient(int n1, int **N, double yy[], double grad[]);
 void    transfer(int first, int last, double a[], double b[]);
-double  golden(double (*f)(double));
+double  golden(int n1, int **N, double (*f)(int,int**,double));
 
-double bdf(double A, double B, int m, int t[], double p[], double u, double h);
-double dens_estimate(double A, double B,  int m, int t[], double p[], double u, double h);
-double KK(double x);
-double K(double x);
+int     compute_mle(int n, int data1[], int data2[], double F[], int tt[], double pp[]);
+void    data_bootstrap(int n, int data1[], int data2[], int data1_bootstrap[], int data2_bootstrap[], int seed);
+double  MSE_SMLE(int n, int B, double h1, double h2);
+double  MSE_dens(int n, int B, double h1, double h2);
+
+void    data_infect(int n, double data_infection[], int seed);
+double  data_smooth();
 
 
 // [[Rcpp::export]]
 
 List NPMLE(DataFrame input)
 {
-    int     i,j;
-    double  a,sum,max,locmax,endpoint=14;
-
-    // number of parameters to be estimated
+    int i,B,seed;
+    double  a1,sum,min,max,locmax,locmin,MSE;
     
-    n1=6;
+    // number of bootstrap samples
     
-    // number of points needed for MLE, extended to the left (by two points)
-    // and to the right (by one point, where it becomes equal to 1)
-    
-    n2=9;
+    B=1000;
     
     DataFrame DF = Rcpp::DataFrame(input);
     IntegerVector data01 = DF["V1"];
@@ -70,103 +78,100 @@ List NPMLE(DataFrame input)
     
     n = (int)data01.size();
     
+    seed = 2;
+    
     data1 = new int[n];
     data2 = new int[n];
+    data3 = new int[n];
     
     for (i=0;i<n;i++)
     {
         data1[i]=data01[i];
         data2[i]=data02[i];
+        data3[i]=data2[i]-data1[i];
     }
     
-    F =  new double[n1+2];
-    MLE = new double[n1+4];
-    pp = new double[n1+2];
-    tt = new int[n1+2];
+    data1_bootstrap = new int[n];
+    data2_bootstrap = new int[n];
+    data_infection  = new double[n];
+    data0 = new int[2*n];
+    index1 = new int[n];
+    
+    F =  new double[n+2];
+    F_bootstrap =  new double[n+2];
+    
+    pp = new double[n+2];
+    tt = new int[n+2];
+    pp_bootstrap = new double[n+2];
+    tt_bootstrap = new int[n+2];
       
-    cumw = new double[n1+1];
-    cs = new double[n1+1];
-    yy = new double[n1+2];
-    yy_new = new double[n1+2];
-    grad = new double[n1+1];
-    w = new double[n1+1];
+    cumw = new double[n+1];
+    cs = new double[n+1];
+    yy = new double[n+2];
+    yy_new = new double[n+2];
+    grad = new double[n+1];
+    w = new double[n+1];
     
     ngrid=140;
 
     grid = new double[ngrid+1];
     SMLE = new double[ngrid+1];
     dens = new double[ngrid+1];
+    SMLE_bootstrap = new double[ngrid+1];
+    dens_bootstrap = new double[ngrid+1];
     
     for (i=0;i<=ngrid;i++)
         grid[i] = i*0.1;
-     
-    N = new int *[n1+2];
-    for (i=0;i<n1+2;i++)
-        N[i] = new int[n1+2];
     
-    for (i=0;i<n1+2;i++)
-    {
-        for (j=0;j<n1+2;j++)
-            N[i][j]=0;
-    }
+    n1 = compute_mle(n,data1,data2,F,tt,pp);
     
-    for (i=0;i<n;i++)
+    sum=max=locmax=0;
+    for (i=0;i<=ngrid;i++)
+        dens[i]= dens_estimate(0.0,14.0,n1+1,tt,pp,grid[i],4);
+    
+    min=1.0e10;
+    locmin=0;
+    
+    Rcout << endl;
+    
+    Rcout << "MSE of density estimates for different bandwidths:" << endl << endl;
+    
+    for (i=0;i<=20;i++)
     {
-        if (data2[i]<=8)
+        MSE = MSE_dens(n,B,3.0,3+i*0.2);
+        
+        Rcout << setprecision(10) << setw(15) << 3+i*0.2 << setprecision(10) << setw(15) << MSE << endl;
+        
+        if (MSE<min)
         {
-            if (data1[i]<=2)
-                N[0][data2[i]-2]++;
-            else
-            {
-                if (data2[i]>2 && data2[i]<=8)
-                    N[data1[i]-2][data2[i]-2]++;
-            }
+            min = MSE;
+            locmin=3+i*0.2;
         }
     }
     
-    for (i=0;i<n;i++)
+    Rcout << endl;
+    
+    for (i=0;i<=ngrid;i++)
     {
-        if (data2[i]>8 && data1[i]>2)
-                N[data1[i]-2][7]++;
-    }
-     
-    for (i=1;i<=n1;i++)
-         tt[i]=i+2;
-     
-    for (i=0;i<=n1;i++)
-         F[i]=i*1.0/(n1+1);
-    
-    yy[0]=yy_new[0]=0;
-    yy[n1+1]=yy_new[n1+1]=1;
-     
-    isoreg(yy,F,cumw,grad,w);
-     
-     MLE[0]=MLE[1]=MLE[2]=0;
-    
-     for (i=1;i<=n1;i++)
-         MLE[i+2] = F[i];
-    
-    MLE[n2]=1;
-    
-    NumericMatrix out1 = NumericMatrix(n2+2,2);
-    
-    for (i=0;i<=n2;i++)
-    {
-        out1(i,0)=i;
-        out1(i,1)=MLE[i];
+        SMLE[i] = bdf(0.0,14.0,n1+1,tt,pp,grid[i],3.6);
+        dens[i]= dens_estimate(0.0,14.0,n1+1,tt,pp,grid[i],locmin);
+        
+        a1 = dens[i];
+        if (max<a1)
+        {
+            max=a1;
+            locmax=grid[i];
+        }
     }
     
-    out1(n2+1,0)=endpoint;
-    out1(n2+1,1)=1;
     
-    pp[0]=0;
-    for (i=1;i<=n1;i++)
-        pp[i] = F[i]-F[i-1];
-    for (i=1;i<=n1;i++)
-        tt[i] = i+2;
+    NumericMatrix out1 = NumericMatrix(n1+2,2);
     
-    pp[n1+1]=1-F[n1];
-    tt[n1+1]=n1+3;
+    for (i=0;i<=n1+1;i++)
+    {
+        out1(i,0)=tt[i];
+        out1(i,1)=F[i];
+    }
     
     sum=0;
     for (i=1;i<=n1+1;i++)
@@ -174,85 +179,58 @@ List NPMLE(DataFrame input)
     
     double out2 = sum;
     
-    max=locmax=0;
+    double out3 = locmin;
     
-    for (i=0;i<=ngrid;i++)
-    {
-        SMLE[i] = bdf(0.0,endpoint,n1+1,tt,pp,grid[i],3.0);
-        dens[i]=dens_estimate(0.0,14.0,n1+1,tt,pp,grid[i],4.0);
-
-        a = dens[i];
-        if (max<a)
-        {
-            max=a;
-            locmax=grid[i];
-        }
-    }
-
-    double out3 = locmax;
-    
-    NumericMatrix out4 = NumericMatrix(ngrid+1,2);
-    
-    for (i=0;i<=ngrid;i++)
-    {
-        out4(i,0)=grid[i];
-        out4(i,1)=SMLE[i];
-    }
+    double out4 = locmax;
     
     NumericMatrix out5 = NumericMatrix(ngrid+1,2);
+    
+    for (i=0;i<=ngrid;i++)
+    {
+        out5(i,0)=grid[i];
+        out5(i,1)=SMLE[i];
+    }
+    
+    NumericMatrix out6 = NumericMatrix(ngrid+1,2);
      
      for (i=0;i<=ngrid;i++)
      {
-         out5(i,0)=grid[i];
-         out5(i,1)=dens[i];
+         out6(i,0)=grid[i];
+         out6(i,1)=dens[i];
      }
 
     
     // make the list for the output
     
-    List out = List::create(Named("MLE")=out1,Named("mean")=out2,Named("locmax")=out3,Named("SMLE")=out4,Named("dens")=out5);
+    List out = List::create(Named("MLE")=out1,Named("mean")=out2,Named("bandwidth")=out3,Named("locmax")=out4,Named("SMLE")=out5,Named("dens")=out6);
 
     // free memory
     
-    for (i=0;i<n1+2;i++)
-        delete[] N[i];
-    delete[] N;
-        
-    delete[] dens; delete[] pp; delete[] grid; delete[] F; delete[] MLE; delete[] SMLE;
-    delete[] cumw; delete[] cs; delete[] yy; delete[] yy_new; delete[] grad; delete[] w, delete[] tt;
-    delete[] data1; delete[] data2;
+    delete[] dens; delete[] pp; delete[] grid; delete[] F; delete[] SMLE;
+    delete[] cumw; delete[] cs; delete[] yy; delete[] yy_new; delete[] grad; delete[] w,
+    delete[] tt; delete[] data1; delete[] data2; delete[] data3; delete[] data_infection;
     
     return out;
 }
 
-void isoreg(double yy[], double F[], double cumw[], double grad[], double w[])
+
+void data_infect(int n, double data_infection[], int seed)
 {
-    int i,iter;
-    double tol=1.0e-10;
+    int    i,j;
     
-    gradient(F,grad);
+    std::mt19937_64 gen(seed);
     
-    iter=0;
-    while (fenchelviol(F,grad,tol,&inprod,&partsum) && iter<=1000)
+    for (i=0;i<n;i++)
     {
-        iter++;
-        transfer(1,n1,F,yy);
-        gradient(yy,grad);
-        weights(yy,w);
-        cumsum(yy,cumw,grad,w);
-        convexminorant(cumw,cs,yy);
-        
-        if (f_alpha_prime(alpha)<=0)
-            alpha=1;
-        else
-            alpha=golden(f_alpha);
-        
-        for (i=1;i<=n1;i++)
-            F[i] = alpha*yy[i]+(1-alpha)*F[i];
+        j=data3[i];
+        std::uniform_real_distribution<double> dis_unif(0.0,j*1.0);
+        data_infection[i] = dis_unif(gen);
     }
 }
 
-double golden(double (*f)(double))
+
+
+double golden(int n1, int **N, double (*f)(int,int**,double))
 {
     double a,b,eps=1.0e-10;
     
@@ -265,7 +243,7 @@ double golden(double (*f)(double))
     
     while (b-a>eps)
     {
-        if ((*f)(xL)<(*f)(xR))
+        if ((*f)(n1,N,xL)<(*f)(n1,N,xR))
         {
             b = xR;
             xR = xL;
@@ -282,17 +260,17 @@ double golden(double (*f)(double))
     
 }
 
-double f_alpha(double alpha)
+double f_alpha(int n1, int **N, double alpha)
 {
     int i;
     
     for (i=1;i<=n1;i++)
         yy_new[i]=(1-alpha)*F[i]+alpha*yy[i];
 
-    return criterion(yy_new);
+    return criterion(n1,N,yy_new);
 }
 
-double f_alpha_prime(double alpha)
+double f_alpha_prime(int n1, int **N, double alpha)
 {
     int        i;
     double    sum;
@@ -306,11 +284,11 @@ double f_alpha_prime(double alpha)
 }
 
 
-int fenchelviol(double yy[], double grad[], double tol, double *inprod, double *partsum)
+int fenchelviol(int n1, double yy[], double grad[], double tol, double *inprod, double *partsum)
 {
-    double    sum,sum2;
-    int    i;
-    int    fenchelvioltemp;
+    double	sum,sum2;
+    int	i;
+    int	fenchelvioltemp;
     
     fenchelvioltemp = 0;
     
@@ -338,18 +316,18 @@ int fenchelviol(double yy[], double grad[], double tol, double *inprod, double *
 
 void transfer(int first, int last, double a[], double b[])
 {
-    int    i;
-    for (i = first; i<= last;i++)    b[i] = a[i];
+    int	i;
+    for (i = first; i<= last;i++)	b[i] = a[i];
 }
 
-double criterion(double yy[])
+double criterion(int n1, int **N, double yy[])
 {
     int i,j;
     double sum=0;
     
-    for (i=0;i<=6;i++)
+    for (i=0;i<=n1;i++)
     {
-        for (j=i+1;j<=7;j++)
+        for (j=i+1;j<=n1+1;j++)
         {
             if (N[i][j]>0)
                 sum -= N[i][j]*log(yy[j]-yy[i]);
@@ -359,24 +337,24 @@ double criterion(double yy[])
     return sum;
 }
 
-void gradient(double yy[], double grad[])
+void gradient(int n1, int **N, double yy[], double grad[])
 {
     int i,j;
     
-    for (i=1;i<=6;i++)
+    for (i=1;i<=n1;i++)
         grad[i]=0;
     
     
-    for (i=1;i<=6;i++)
+    for (i=1;i<=n1;i++)
     {
-        for (j=i+1;j<=7;j++)
+        for (j=i+1;j<=n1+1;j++)
         {
             if (N[i][j]>0)
                 grad[i] -= N[i][j]/(yy[j]-yy[i]);
         }
     }
         
-    for (i=1;i<=6;i++)
+    for (i=1;i<=n1;i++)
     {
         for (j=0;j<i;j++)
         {
@@ -387,24 +365,24 @@ void gradient(double yy[], double grad[])
 }
 
 
-void weights(double yy[], double w[])
+void weights(int n1, int **N, double yy[], double w[])
 {
     int i,j;
     
-    for (j=1;j<=6;j++)
+    for (j=1;j<=n1;j++)
         w[j]=0;
     
     
-    for (i=1;i<=6;i++)
+    for (i=1;i<=n1;i++)
     {
-        for (j=i+1;j<=7;j++)
+        for (j=i+1;j<=n1+1;j++)
         {
             if (N[i][j]>0)
                 w[i] += N[i][j]/SQR(yy[j]-yy[i]);
         }
     }
         
-    for (i=1;i<=6;i++)
+    for (i=1;i<=n1;i++)
     {
         for (j=0;j<i;j++)
         {
@@ -415,7 +393,7 @@ void weights(double yy[], double w[])
 }
 
 
-void cumsum(double yy[], double cumw[], double grad[], double w[])
+void cumsum(int n1, double yy[], double cumw[], double grad[], double w[])
 {
     int    j;
     
@@ -430,12 +408,12 @@ void cumsum(double yy[], double cumw[], double grad[], double w[])
     
 }
 
-void convexminorant(double cumw[], double cs[], double yy[])
+void convexminorant(int n1, double cumw[], double cs[], double yy[])
 {
     int    i,j,m;
     
     yy[1] = cs[1]/cumw[1];
-    for (i=1+1;i<=n1;i++)
+    for (i=2;i<=n1;i++)
     {
         yy[i] = (cs[i]-cs[i-1])/(cumw[i]-cumw[i-1]);
         if (yy[i-1]>yy[i])
@@ -450,24 +428,267 @@ void convexminorant(double cumw[], double cs[], double yy[])
             }
         }
     }
+    
+    for (i=1;i<=n1;i++)
+    {
+        if (yy[i]<=0)
+            yy[i]=0;
+        if (yy[i]>=1)
+            yy[i]=1;
+    }
+}
+
+void isoreg(int n1, int **N, double yy[], double F[], double cumw[], double grad[], double w[])
+{
+    int i,iter;
+    double tol=1.0e-10;
+    
+    gradient(n1,N,F,grad);
+    
+    iter=0;
+    while (fenchelviol(n1,F,grad,tol,&inprod,&partsum) && iter<=1000)
+    {
+        iter++;
+        transfer(0,n1,F,yy);
+        gradient(n1,N,yy,grad);
+        weights(n1,N,yy,w);
+        cumsum(n1,yy,cumw,grad,w);
+        convexminorant(n1,cumw,cs,yy);
+
+        alpha=golden(n1,N,f_alpha);
+        
+        for (i=1;i<=n1+1;i++)
+            F[i] = alpha*yy[i]+(1-alpha)*F[i];
+    
+    }
+}
+
+int compute_mle(int n, int data1[], int data2[], double F[], int tt[], double pp[])
+{
+    int i,j,n1,m,**N;
+    
+    for (i=0;i<n;i++)
+    {
+        data0[i]=data1[i];
+        data0[i+n]=data2[i];
+    }
+    
+    qsort(data0,2*n,sizeof(int),compare);
+    
+    min_obs2=(int)1.0e5;
+    for (i=0;i<n;i++)
+    {
+        if (data2[i]<min_obs2)
+            min_obs2 = data2[i];
+    }
+    
+    min_obs2 -= 1;
+    
+    max_obs1=0;
+    for (i=0;i<n;i++)
+    {
+        if (data1[i]>max_obs1)
+            max_obs1 = data1[i];
+    }
+
+    
+    for (i=0;i<2*n;i++)
+    {
+        if (data0[i]<=min_obs2)
+            index1[data0[i]]=0;
+    }
+    
+    tt[0]=0;
+    
+    j=0;
+    for (i=1;i<2*n;i++)
+    {
+        if (data0[i]>data0[i-1] && data0[i]>min_obs2 && data0[i]<=max_obs1)
+        {
+            j++;
+            index1[data0[i]]=j;
+            tt[j]=data0[i];
+        }
+    }
+    
+    n1=j;
+    
+    for (i=0;i<2*n;i++)
+    {
+        if (data0[i]>max_obs1)
+            index1[data0[i]]=n1+1;
+    }
+    
+    tt[n1+1]=max_obs1+1;
+    
+    // n1 is number of characterizing parameters
+    
+    m = n1+1;
+    
+    N = new int *[m+1];
+     
+    for (i=0;i<m+1;i++)
+        N[i] = new int[m+1];
+    
+    for (i=0;i<=m;i++)
+    {
+        for (j=0;j<=m;j++)
+            N[i][j]=0;
+    }
+    
+    for (i=0;i<n;i++)
+    {
+        if (index1[data2[i]]<=n1)
+        {
+            if (data1[i]<=min_obs2)
+                N[0][index1[data2[i]]]++;
+            else
+            {
+                if (data2[i]>min_obs2 && index1[data2[i]]<=m)
+                    N[index1[data1[i]]][index1[data2[i]]]++;
+            }
+        }
+    }
+    
+    for (i=0;i<n;i++)
+    {
+        if (index1[data2[i]]>n1 && data1[i]>min_obs2)
+                 N[index1[data1[i]]][n1+1]++;
+    }
+    
+    F[0]=0.0;
+    for (i=1;i<=n1;i++)
+         F[i]=i*1.0/(n1+1);
+     
+    F[n1+1]=1;
+     
+    yy[0]=yy_new[0]=0;
+    yy[n1+1]=yy_new[n1+1]=1;
+     
+    isoreg(n1,N,yy,F,cumw,grad,w);
+    
+    
+    pp[0]=0;
+    for (i=1;i<=n1+1;i++)
+        pp[i] = F[i]-F[i-1];
+    
+    for (i=0;i<m+1;i++)
+        delete[] N[i];
+    delete[] N;
+    
+    return n1;
+}
+
+int compare (const void * a, const void * b)
+{
+  return ( *(int*)a - *(int*)b );
+}
+
+void data_bootstrap(int m, int data1[], int data2[], int data1_bootstrap[], int data2_bootstrap[], int seed)
+{
+    int    i,v;
+        
+    data_infect(n,data_infection,seed);
+    
+    for (i=0;i<m;i++)
+    {
+        v = (round)(data_infection[i]+data_smooth());
+        if (v > data3[i])
+        {
+            data1_bootstrap[i]= v-data3[i];
+            data2_bootstrap[i]=v;
+        }
+        else
+        {
+            data1_bootstrap[i]=0;
+            data2_bootstrap[i]=v;
+        }
+    }
+}
+
+double MSE_SMLE(int n, int B, double h1, double h2)
+{
+    int i,iter,seed;
+    double MSE;
+    
+    MSE=0;
+    
+    for (iter=1;iter<=B;iter++)
+    {
+        seed = rand();
+        data_bootstrap(n,data1,data2,data1_bootstrap,data2_bootstrap,seed);
+        n1_bootstrap = compute_mle(n,data1_bootstrap,data2_bootstrap,F_bootstrap,
+                                   tt_bootstrap,pp_bootstrap);
+        
+        for (i=1;i<=ngrid;i++)
+        {
+            MSE += SQR(bdf(0.0,14.0,n1_bootstrap+1,tt_bootstrap,pp_bootstrap,grid[i],h2)
+                     -bdf(0.0,14.0,n1+1,tt,pp,grid[i],h1))*0.1;
+        }
+    }
+    
+    return MSE/B;
+}
+
+double MSE_dens(int n, int B, double h1, double h2)
+{
+    int i,iter,seed;
+    double MSE;
+        
+    MSE=0;
+    
+    for (iter=1;iter<=B;iter++)
+    {
+        seed = rand();
+        data_bootstrap(n,data1,data2,data1_bootstrap,data2_bootstrap,seed);
+        n1_bootstrap = compute_mle(n,data1_bootstrap,data2_bootstrap,F_bootstrap,
+                                   tt_bootstrap,pp_bootstrap);
+        
+        for (i=1;i<=ngrid;i++)
+            MSE += SQR(dens_estimate(0.0,14.0,n1_bootstrap+1,tt_bootstrap,pp_bootstrap,grid[i],h2)
+                       -dens_estimate(0.0,14.0,n1+1,tt,pp,grid[i],h1))*0.1;
+    }
+    
+    return MSE/B;
+}
+
+double dens_estimate(double A, double B,  int m, int t[], double p[], double u, double h)
+{
+    int k;
+    double      t1,t2,t3,sum;
+    
+    sum=0;
+    
+    for (k=1;k<=m;k++)
+    {
+        t1=(u-t[k])/h;
+        t2=(u+t[k]-2*A)/h;
+        t3=(2*B-u-t[k])/h;
+        sum += (K(t1)+K(t2)+K(t3))*p[k]/h;
+        //sum += K(t1)*p[k]/h;
+    }
+    
+    return fmax(0,sum);
 }
 
 
 double bdf(double A, double B, int m, int t[], double p[], double u, double h)
 {
-    int            k;
-    double        t1,t2,t3,sum;
-    
+    int       k;
+    double    t1,t2,t3,sum;
     
     sum=0;
+    
     for (k=1;k<=m;k++)
     {
         t1=(u-t[k])/h;
         t2=(u+t[k]-2*A)/h;
         t3=(2*B-u-t[k])/h;
         sum+= (KK(t1)+KK(t2)-KK(t3))*p[k];
+        //sum+= KK(t1)*p[k];
     }
-    return sum;
+
+    return fmax(sum,0);
 }
 
 double KK(double x)
@@ -504,22 +725,30 @@ double K(double x)
     return y;
 }
 
-double dens_estimate(double A, double B,  int m, int t[], double p[], double u, double h)
-{
-    int k;
-    double      t1,t2,t3,sum;
-    
-    sum=0;
-    
-    for (k=1;k<=m;k++)
-    {
-        t1=(u-t[k])/h;
-        t2=(u+t[k]-2*A)/h;
-        t3=(2*B-u-t[k])/h;
-        sum += (K(t1)+K(t2)+K(t3))*p[k]/h;
-    }
-    
-    return fmax(0,sum);
-}
 
+
+
+double data_smooth()
+{
+    int i,seed;
+    double v,w,c;
+    
+    seed = rand();
+    std::mt19937_64 gen(seed);
+    std::uniform_real_distribution<double> dis(0,14);
+    std::uniform_real_distribution<double> dis_unif(0.0,1.0);
+    
+    i=0;
+    w=0;
+    
+    while (i<1)
+    {
+        w=dis(gen);
+        v=dis_unif(gen);
+        c = dens_estimate(0.0,14.0,n1+1,tt,pp,w,4);
+        if (v<14*c/100)
+            i++;
+    }
+    return w;
+}
 

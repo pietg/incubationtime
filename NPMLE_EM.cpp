@@ -109,8 +109,8 @@ List NPMLE(DataFrame input)
     
     for (i=0;i<=ngrid;i++)
     {
-        SMLE[i] = bdf(0,14,m,tt,pp,grid[i],3.0);
-        dens[i]=dens_estimate(0.0,14.0,m,tt,pp,grid[i],4.0);
+        SMLE[i] = bdf(0,14,m,tt,pp,grid[i],3.6);
+        dens[i]=dens_estimate(0.0,14.0,m,tt,pp,grid[i],4.6);
     }
     
     NumericMatrix out1 = NumericMatrix(15,2);
