@@ -14,6 +14,6 @@ We also study a continuous simulation model, where the observations are not disc
 
 This repository complements the paper http://www.nieuwarchief.nl/serie5/pdf/naw5-2020-21-3-181.pdf in "Nieuw Archief voor Wiskunde" ("New Archive for Mathematics", a journal for the Dutch mathematicians), discussing the different ways of estimating the distribution of the incubation time. More details about the methods are given in incubation.pdf.
 
-Note that the computation of the MLE does not need a choice of kernel or bandwidth.The bandwidths for the SMLE and density estimate can be chosen by a data-adaptive methid, described in incubation.pdf, using the smoothed bootstrap. 
-We demonstrate this method for the density estimate, using 1000 bootstrap samples for each point on a grid on [3,7]. Usually the choice of the kernel does not make much difference, as long as the kernel is sufficiently smooth at the boundary (for this reason we have a preference for the triweight above the Epanechnikov kernel). 
+Note that the computation of the MLE does not need a choice of kernel or bandwidth.The bandwidths for the SMLE and density estimate can be chosen by a data-adaptive method, described in incubation.pdf, using the smoothed bootstrap. 
+We demonstrate this method for the density estimate in analysis_ICM.R, using 1000 bootstrap samples for each point on a grid on [3,7]. Usually the choice of the kernel does not make much difference, as long as the kernel is sufficiently smooth at the boundary (for this reason we have a preference for the triweight above the Epanechnikov kernel). 
 
