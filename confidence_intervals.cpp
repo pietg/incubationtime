@@ -159,6 +159,11 @@ List CI()
     for (iter=0;iter<NumIt+1;iter++)
         f3[iter] = new double[140];
     
+    f4 = new double[NumIt+1];
+        
+    lowbound = new double[ngrid+1];
+    upbound  = new double[ngrid+1];
+    
     data_exp(n,data1,data2,data3,seed);
     
     n1 = compute_mle(n,data1,data2,F,tt,pp);
@@ -193,13 +198,7 @@ List CI()
             f3[iter][i]=dens_bootstrap[i]-dens[i];
         }
     }
-        
-    f4 = new double[NumIt+1];
-        
-    lowbound = new double[ngrid+1];
-    upbound  = new double[ngrid+1];
-    
-        
+            
     for (i=0;i<=ngrid;i++)
     {
         for (iter=0;iter<NumIt;iter++)
