@@ -269,3 +269,6 @@ plot(c(-10000,-10000),xlim=c(0,14), ylim=c(0.0,max(u3)), main= "", ylab="",xlab=
 lines(x0,y0,lwd=2,lty=2,col="red")#
 lines(x1,y1,lty=1,lwd=2,col="blue")#
 segments(u1,u2,u1,u3)
+library(Rcpp)#
+ sourceCpp("intequation.cpp")#
+ output <- inteq(6.0)
