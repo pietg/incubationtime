@@ -106,8 +106,6 @@ List simulation()
     
     NumIt= 1000;
     
-    seed = 5004;
-    
     Rcout << endl;
     
     a=3.035140901;
@@ -162,14 +160,14 @@ List simulation()
     
     for (iter=0;iter<NumIt;iter++)
     {
-        Rcout << iter+1 << endl;
+        Rcpp::Rcout << iter+1 << endl;
  
         seed = rand();
         data_exp(n,data1,data2,data3,seed);
         n1 = compute_mle(n,data1,data2,F,tt,pp);
         for (i=0;i<=ngrid;i++)
         {
-            a1=dens_estimate(0.0,43.0,n1+1,tt,pp,grid[i],h);
+            a1=dens_estimate(0.0,50.0,n1+1,tt,pp,grid[i],h);
             out1(iter,i)= a1;
         }
     }

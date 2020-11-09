@@ -4,7 +4,7 @@ LDLIBS = -lm
 
 SRCS = $(shell ls *.cpp)
 OBJS = $(subst .cpp,.o,$(SRCS))
-APPLS = incubation_continuous.exe
+APPLS = incub_continuous.exe
 
 all: $(APPLS)
 
