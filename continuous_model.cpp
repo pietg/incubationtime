@@ -1,11 +1,4 @@
 //
-//  main.cpp
-//  incubation_continuous
-//
-//  Created by Piet Groeneboom on 07/11/2020.
-//
-
-//
 //  Simulations of 1000 samples of n=1000 for
 //  the distribution of the incubation time
 //
@@ -24,8 +17,10 @@
 #include <time.h>
 #include <random>
 #include <string.h>
+#include <Rcpp.h>
 
 using namespace std;
+using namespace Rcpp;
 
 #define SQR(x) ((x)*(x))
 
@@ -96,11 +91,14 @@ void   sort_data0(int m, double data0[], int index0[]);
 void   sort_index(int n, int index1[]);
 
 
-int main(int argc, const char * argv[])
+
+
+// [[Rcpp::export]]
+
+List simulation()
 {
     int i,iter,NumIt,seed;
     double  a1;
-    FILE    *outputfile = NULL;
     
     n=1000;
     M=30;
@@ -108,7 +106,7 @@ int main(int argc, const char * argv[])
     
     NumIt= 1000;
     
-    cout << endl;
+    Rcout << endl;
     
     a=3.035140901;
     b=0.002619475;
@@ -156,59 +154,36 @@ int main(int argc, const char * argv[])
     
     h=3.4;
     
-    cout << "bandwidth = " << 3.4 << endl << endl;
+    Rcpp::Rcout << "bandwidth = " << 3.4 << endl << endl;
     
-    n1 = compute_mle(n,data1,data2,F,tt,pp);
-    
-    outputfile=fopen("dens_values.txt","w");
-    rewind(outputfile);
+    NumericMatrix out1 = NumericMatrix(NumIt,ngrid+1);
     
     for (iter=0;iter<NumIt;iter++)
     {
-        cout << iter+1 << endl;
+        Rcout << iter+1 << endl;
  
         seed = rand();
         data_exp(n,data1,data2,data3,seed);
         n1 = compute_mle(n,data1,data2,F,tt,pp);
         for (i=0;i<=ngrid;i++)
         {
-            a1=dens_estimate(0.0,43.0,n1+1,tt,pp,grid[i],h);
-            fprintf(outputfile,"%15.10f",a1);
+            a1=dens_estimate(0.0,50.0,n1+1,tt,pp,grid[i],h);
+            out1(iter,i)= a1;
         }
-        
-        fprintf(outputfile,"\n");
     }
     
+    NumericMatrix out2 = NumericMatrix(n1+2,2);
     
-    fclose(outputfile);
-    
-    printf("\n\n");
-    
-    outputfile=fopen("MLE.txt","w");
-    rewind(outputfile);
-       
     for (i=0;i<=n1+1;i++)
-        fprintf(outputfile,"%15.10f     %15.10f\n",tt[i],F[i]);
-     
-    fclose(outputfile);
+    {
+        out2(i,0)=tt[i];
+        out2(i,1)=F[i];
+    }
     
-    outputfile=fopen("data_exp.txt","w");
-    rewind(outputfile);
+    // make the list for the output
     
-    for (i=0;i<n;i++)
-        fprintf(outputfile,"%15.10f   %15.10f\n",data1[i],data2[i]);
-        
-    fclose(outputfile);
-    
-    
-    outputfile=fopen("ICM_masses.txt","w");
-    rewind(outputfile);
-    
-    for (i=1;i<=n1+1;i++)
-        fprintf(outputfile,"%15.10f     %15.10f\n",tt[i],pp[i]);
-        
-    fclose(outputfile);
-    
+    List out = List::create(Named("dens")=out1,Named("MLE")=out2);
+
     // free memory
     
     for (i=0;i<2*n+2;i++)
@@ -216,12 +191,12 @@ int main(int argc, const char * argv[])
     delete[] N;
     
     delete[] dens; delete[] grid; delete[] F;  delete[] MLE;
-    delete[] cumw; delete[] cs; delete[] yy; delete[] yy_new; delete[] grad; delete[] w;
+    delete[] cumw; delete[] cs; delete[] yy; delete[] yy_new; delete[] grad; delete[] w,
     delete[] tt; delete[] pp; delete[] data0; delete[] data1; delete[] data2; delete[] data3;
     delete[] index0; delete[] index1; delete[] index2; delete[] ind; delete[] ind1;
     delete[] sec;
     
-    return 0;
+    return out;
 }
 
 
@@ -480,7 +455,7 @@ void   data_exp(int n, double data1[], double data2[], double data3[], int seed)
 
 int compute_mle(int n, double data1[], double data2[], double F[], double tt[], double pp[])
 {
-    int i,j,n1;
+    int i,j,n1,m;
     //FILE    *outputfile = NULL;
     
     for (i=0;i<n;i++)
@@ -557,7 +532,8 @@ int compute_mle(int n, double data1[], double data2[], double F[], double tt[], 
     
     for (i=0;i<2*n;i++)
         ind1[i]=ind[index0[i]];
-
+    
+    m = n1+1;
     
     for (i=0;i<=2*n+1;i++)
     {
@@ -740,13 +716,16 @@ double K(double x)
 double dens_estimate(double A, double B,  int m, double t[], double p[], double u, double h)
 {
     int k;
-    double      t1,sum;
+    double      t1,t2,t3,sum;
     
     sum=0;
     
     for (k=1;k<=m;k++)
     {
         t1=(u-t[k])/h;
+        t2=(u+t[k]-2*A)/h;
+        t3=(2*B-u-t[k])/h;
+        //sum += (K(t1)+K(t2)+K(t3))*p[k]/h;
         sum += K(t1)*p[k]/h;
     }
     
