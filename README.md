@@ -20,4 +20,4 @@ The executable can be run from a terminal window, typing ./incub_continuous.exe.
 
 The theory predicts the values of the variances of the estimates of the density, which can be found by running inteq.R in the main directory, which is presently set to evaluate the theoretic value at the point (number of days) 6, but can also be used to evaluate at another number of days between 2 and 11 or a number between these bounds that is not an integer. The executable was tested on a Mac and using Linux.
 
-These simulation can also be run by the R script simulations_continuous_model>R, which uses continuous_model.cpp in the main directory of the repository incubationtime. The 1000 lines of the 10 density estimates are now in output$dens and an estimate of the MLE of the last sample in output$MLE.
+These simulation can also be run by the R script simulations_continuous_model.R, which uses continuous_model.cpp in the main directory of the repository incubationtime. The 1000 lines of the 10 density estimates are now in output$dens and an estimate of the MLE of the last sample in output$MLE. A plot of the MLE is shown in MLE.pdf.
