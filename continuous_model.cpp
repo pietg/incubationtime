@@ -111,7 +111,7 @@ List simulation()
     a=3.035140901;
     b=0.002619475;
     
-    ngrid=10;
+    ngrid=9;
 
     grid = new double[ngrid+1];
     dens = new double[ngrid+1];
