@@ -22,15 +22,18 @@ grad=function(alpha)
 	for (i in 1:n)
 	{
 		denom = exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]);
-		if (data1[i]==0)
+		if (denom>0)
 		{
-			calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom;
+			if (data1[i]==0)
+			{
+			  calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom;
+			}
+			else
+			{
+				calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom-alpha[2]*exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])*log(data1[i])/denom;
+			}
+			calc2 = calc2+exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])/denom-exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])/denom;
 		}
-		else
-		{
-			calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom-alpha[2]*exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])*log(data1[i])/denom;
-		}
-		calc2 = calc2+exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])/denom-exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])/denom;
 	}
 	return(c(-calc1,-calc2));
 }

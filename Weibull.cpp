@@ -4,7 +4,7 @@
 //  Created by Piet Groeneboom on 16/07/2020.
 //  Copyright (c) 2020 Piet Groeneboom. All rights reserved.
 //
-//  The Hooke-Jeeves algorithm is a odification of toms178.cpp:
+//  The Hooke-Jeeves algorithm is a codification of toms178.cpp:
 //  Version: 12 February 2008
 //  Author:
 //    The ALGOL original is by Arthur Kaupe.
