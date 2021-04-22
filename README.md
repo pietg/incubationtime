@@ -22,4 +22,7 @@ The executable can be run from a terminal window, typing ./incub_continuous.exe.
 
 The theory predicts the values of the variances of the estimates of the density, which can be found by running inteq.R in the main directory, which is presently set to evaluate the theoretic value at the point (number of days) 6, but can also be used to evaluate at another number of days between 2 and 11 or a number between these bounds that is not an integer. The executable incub_continuous.exe was tested on a Mac and using Linux (for which I have to thank my son Tim Groeneboom).
 
+The directory Lauer_analysis contains een R script for the analysis of a data file of 181 subjects corresponding to the paper "The Incubation Period of Coronavirus Disease 2019 (COVID-19) From Publicly Reported Confirmed Cases: Estimation and Application", Lauer et al., Annals of Internal Medicine, 2020, 577--582. These data are *doubly* censored (the time of becoming symptomatic is only known to belong to an interval). 
+The R script analysis_IQM_Lauer.R gives the MLE, SMLE and density estimate of the incubation time distribution for this data set and compares this with the results, using the Weibull and log-normal distributions, coming from the R package coarseDataTools. Moreover, the R script analysis_IQM_testdata.R gives the analysis for a test data set of size n=500, where the incubation times are generated from a mixture of normal distributions.
+
 
