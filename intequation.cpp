@@ -31,7 +31,7 @@ void    LUPSolve(double **A, int *P, double *b, int N, double *x);
 
 List inteq(double point)
 {
-    int     i,j,ngrid,*P;
+    int     i,j,ngrid,ngrid1,ngrid2,*P;
     double  *phi,*psi,M,M1;
     double  alpha,beta,**A;
     double  *grid,tol=1.0e-9;
@@ -51,96 +51,99 @@ List inteq(double point)
     M=30.0;
     M1=20;
     
-    ngrid=1999;
-    step=0.01;
+    ngrid=500;
+    
+    // number of points for exit time E
+    ngrid1=300;
+    
+    // number of points for support ofincubation time distribution
+    ngrid2=200;
+    
+    step=0.1;
     
     grid = new double[ngrid+1];
     
     for (i=0;i<=ngrid;i++)
-        grid[i]=i*step;
+        grid[i]=(int)i*step;
     
     bandwidth=3.4;
     
-    A = new double *[ngrid+1];
-    for (i=0;i<ngrid+1;i++)
-        A[i] = new double[ngrid+1];
+    A = new double *[ngrid2+1];
+    for (i=0;i<ngrid2+1;i++)
+        A[i] = new double[ngrid2+1];
     
-    P = new int[ngrid+2];
+    P = new int[ngrid2+2];
     
-    phi = new double[ngrid+1];
-    psi = new double[ngrid+1];
+    phi = new double[ngrid2+1];
+    psi = new double[ngrid2+1];
     
-    for (i=0;i<=ngrid;i++)
+    for (i=0;i<=ngrid2;i++)
         phi[i]=psi[i]=0;
     
-    for (i=0;i<=ngrid;i++)
+    for (i=0;i<=ngrid2;i++)
         psi[i] = K1(t,grid[i],bandwidth);
     
-    for (i=0;i<=ngrid;i++)
+    for (i=0;i<=ngrid2;i++)
     {
-        for (j=0;j<=ngrid;j++)
+        for (j=0;j<=ngrid2;j++)
             A[i][j]=0;
     }
     
-    A[0][0] = -log(M/grid[1])/(M*Weibull_df(grid[1],alpha,beta,M1));
-    
-    for (i=1;i<=ngrid;i++)
-        A[i][i] = -log(M/grid[i])/(M*Weibull_df(grid[i],alpha,beta,M1));
-    
-    for (i=1;i<=ngrid;i++)
+    for (i=0;i<=ngrid2;i++)
     {
         w=grid[i];
-        for (j=1;j<=i;j++)
+        for (j=1;j<=ngrid1;j++)
         {
             e=grid[j];
-            if (i+j<=ngrid)
+            if (i+j<=ngrid2)
+            {
                 A[i][i+j] += step/(M*e*(Weibull_df(w+e,alpha,beta,M1)-Weibull_df(w,alpha,beta,M1)));
-            A[i][i] -= step/(M*e*(Weibull_df(w+e,alpha,beta,M1)-Weibull_df(w,alpha,beta,M1)));
-        }
-        for (j=1;j<=i;j++)
-        {
-            e=grid[j];
-            A[i][i-j]   += step/(M*e*(Weibull_df(w,alpha,beta,M1)-Weibull_df(w-e,alpha,beta,M1)));
-            A[i][i]   -= step/(M*e*(Weibull_df(w,alpha,beta,M1)-Weibull_df(w-e,alpha,beta,M1)));
-        }
-        
-        for (j=i+1;j<=ngrid;j++)
-        {
-            e=grid[j];
-            if (i+j<=ngrid)
-                A[i][i+j]   += step/(M*e*(Weibull_df(w+e,alpha,beta,M1)-Weibull_df(w,alpha,beta,M1)));
-            A[i][i]   -= step/(M*e*(Weibull_df(w+e,alpha,beta,M1)-Weibull_df(w,alpha,beta,M1)));
+                A[i][i] -= step/(M*e*(Weibull_df(w+e,alpha,beta,M1)-Weibull_df(w,alpha,beta,M1)));
+            }
+            if (i+j>ngrid2)
+                A[i][i] -= step/(M*e*(1.0-Weibull_df(w,alpha,beta,M1)));
+            
+            if (i-j>=0)
+            {
+                A[i][i-j]   += step/(M*e*(Weibull_df(w,alpha,beta,M1)-Weibull_df(w-e,alpha,beta,M1)));
+                A[i][i] -= step/(M*e*(Weibull_df(w,alpha,beta,M1)-Weibull_df(w-e,alpha,beta,M1)));
+            }
+            
+            if (i-j<=0)
+                A[i][i] -= step/(M*e*Weibull_df(w,alpha,beta,M1));
+            
         }
     }
     
         
-    LUPDecompose(A,ngrid+1,tol,P);
-    LUPSolve(A,P,psi,ngrid+1,phi);
+    LUPDecompose(A,ngrid2+1,tol,P);
+    LUPSolve(A,P,psi,ngrid2+1,phi);
+    
     
     sprintf(filename, "phi.txt");
     outputfile = fopen(filename, "w");
     rewind(outputfile);
     
-    for(i=0;i<=ngrid;i++)
+    for(i=0;i<=ngrid2;i++)
         fprintf(outputfile,"%12.8f   %15.10f     %15.10f\n", grid[i],phi[i],K1(t,grid[i],bandwidth));
     
     fclose(outputfile);
     
     variance=0;
     
-    for (i=1;i<=ngrid;i++)
+    for (i=1;i<=ngrid2;i++)
         variance += SQR(phi[i])*log(M/grid[i])*step/(M*Weibull_df(grid[i],alpha,beta,M1));
     
-    for (i=1;i<=ngrid;i++)
+    for (i=1;i<=ngrid2;i++)
     {
         for (j=0;j<i;j++)
             variance += SQR(phi[i]-phi[j])*SQR(step)/((grid[i]-grid[j])*M*(Weibull_df(grid[i],alpha,beta,M1)-Weibull_df(grid[j],alpha,beta,M1)));
     }
     
     
-    NumericMatrix out1 = NumericMatrix(ngrid+1,2);
+    NumericMatrix out1 = NumericMatrix(ngrid2+1,2);
     
-    for (i=0;i<=ngrid;i++)
+    for (i=0;i<=ngrid2;i++)
     {
         out1(i,0)=grid[i];
         out1(i,1)=phi[i];
@@ -154,7 +157,7 @@ List inteq(double point)
 
     // free memory
     
-    for (i=0;i<ngrid+1;i++)
+    for (i=0;i<ngrid2+1;i++)
         delete[] A[i];
     delete[] A;
     
@@ -177,7 +180,7 @@ double Weibull_df(double x, double a, double b, double M1)
 double K1(double t, double w, double h)
 {
     if (fabs((t-w)/h)<=1)
-        return 105*SQR(SQR(h)-SQR(t-w))*(w-t)/(16*pow(h,7));
+        return 105*SQR(SQR(h)-SQR(t-w))*(t-w)/(16*pow(h,7));
     else
         return 0;
 }
