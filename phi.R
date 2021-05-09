@@ -2,7 +2,7 @@
 ### Piet Groeneboom
 
 
-   B<-read.table("phi2.txt")
+   B<-read.table("phi.txt")
    x1<-B[,1]
    y1<-B[,2]
    y2<-B[,3]

@@ -109,9 +109,8 @@ List inteq(double point)
                 A[i][i] -= step/(M*e*(Weibull_df(w,alpha,beta,M1)-Weibull_df(w-e,alpha,beta,M1)));
             }
             
-            if (i-j<=0)
+            if (i-j<=0 && i>0)
                 A[i][i] -= step/(M*e*Weibull_df(w,alpha,beta,M1));
-            
         }
     }
     
