@@ -420,3 +420,102 @@ library(Rcpp)#
    plot(c(-10000,-10000),xlim=c(0,20), ylim=c(a2,b2), main= "", ylab="",xlab="",bty="n",las=1)#
    lines(x1, y1,lwd=2,col="red")#
    lines(x1, y2,lwd=2,col="blue",lty=2)
+library(Rcpp)#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_ICM.cpp")#
+#
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue")#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+output2
+library(lbfgs)#
+   A<-read.table("inputdata_Wuhan.txt")#
+   data1<-A[,1]#
+   data2<-A[,2]#
+   n<-88#
+   alpha=vector("numeric",2)#
+criterion=function(alpha)#
+{#
+	calc=0;#
+	for (i in 1:n)#
+	{#
+		calc = calc+log(exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]));#
+	}#
+	return(-calc);#
+}#
+#
+grad=function(alpha)#
+{#
+	calc1=0;#
+	calc2=0;#
+	for (i in 1:n)#
+	{#
+		denom = exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]);#
+		if (denom>0)#
+		{#
+			if (data1[i]==0)#
+			{#
+			  calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom;#
+			}#
+			else#
+			{#
+				calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom-alpha[2]*exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])*log(data1[i])/denom;#
+			}#
+			calc2 = calc2+exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])/denom-exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])/denom;#
+		}#
+	}#
+	return(c(-calc1,-calc2));#
+}#
+#
+output <- lbfgs(criterion, grad, c(2,0.002))#
+output$par
+library(Rcpp)#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_ICM.cpp")#
+#
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue")#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+output2

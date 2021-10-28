@@ -91,7 +91,7 @@ List Weibull(DataFrame input)
     alpha_init[1]=0.02;
     
     iter=hooke(m,alpha_init,alpha,rho,eps,nIterations,criterion);
-    
+        
     NumericMatrix out1 = NumericMatrix(ngrid+1,2);
     
     for (i=0;i<=ngrid;i++)
