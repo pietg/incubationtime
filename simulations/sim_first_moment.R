@@ -6,8 +6,7 @@
 	source("lognormal_nloptr.R")
 
 	NumIt = 1000
-	n = 1000
-	p = 0.95
+	n = 500
 	
 # data vectors
 	S <- vector("numeric", n)
@@ -99,7 +98,7 @@ for (iter in 1: NumIt)
 
 }
 
-pdf("BoxPlot_percentile.pdf")
+pdf("BoxPlot_mean.pdf")
 boxplot(MLEMat,las=1)
 #abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")
 abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")

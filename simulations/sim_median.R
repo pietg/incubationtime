@@ -6,7 +6,7 @@
 	source("lognormal_nloptr.R")
 
 	NumIt = 1000
-	n = 1000
+	n = 500
 	p = 0.5
 	
 # data vectors
@@ -52,7 +52,7 @@ for (iter in 1: NumIt)
 	}
 
 # Compute NPMLE	
-	output <- NPMLE(n,data,bandwidth=1.5,percentile=0.5)
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.5)
 	median_NPMLE <- output$quantile
 
 # provide options for parametric methods	
@@ -91,7 +91,7 @@ for (iter in 1: NumIt)
 	#write(median_Weibull,file = "mean_Weibull.txt", ncol =1, append = TRUE)
 	#write(median_lognormal,file = "mean_lognormal.txt", ncol =1, append = TRUE)
 
-#make matrix for box plot	
+# make matrix for box plot	
 	MLEMat[iter,] = c(median_NPMLE, median_Weibull,median_lognormal)
 
 }
