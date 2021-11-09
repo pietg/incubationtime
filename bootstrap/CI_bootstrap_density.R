@@ -10,6 +10,6 @@ B <- output$CI_density
 
 pdf("CI_density.pdf")
 plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)
-lines(x1,y1,lwd=2,type ="s",col="red")
+lines(x1,y1,lwd=2,col="red")
 segments(x1,y2,x1,y3)
 dev.off()
