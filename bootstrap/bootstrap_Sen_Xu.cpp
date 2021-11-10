@@ -126,7 +126,7 @@ List ComputeIntervals_df(DataFrame input)
     }
     
     ngrid = 150;
-    grid = new double[ngrid];
+    grid = new double[ngrid+1];
                                   
     for (i=0;i<=ngrid;i++)
         grid[i] = M1*i/ngrid;
