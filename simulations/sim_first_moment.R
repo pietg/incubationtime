@@ -51,7 +51,8 @@ for (iter in 1: NumIt)
 	}
 
 # Compute NPMLE	
-	output <- NPMLE(n,data)
+
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)
 	#mean_NPMLE <- output$quantile
 	mean_NPMLE <- output$mean
 
