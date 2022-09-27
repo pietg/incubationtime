@@ -45,42 +45,37 @@ typedef struct
 }
 index_object;
 
-int     compare (const void * a, const void * b);
-int     compare2(const void *a, const void *b);
-
-double  criterion(int n1, double yy[], int index_end[], int **sec_index);
-double  f_alpha(int n1, double alpha, double F[], double yy[], double yy_new[], int **sec_index, int index_end[]);
-double  f_alpha_prime(int n1, double alpha, double F[], double grad[], double yy[], double yy_new[]);
-int     fenchelviol(int n1, double b[], double nabla[], double tol, double *inprod, double *partsum);
-
-void    isoreg(int n1, double F[], int **sec_index,
-               int index_end[], double cumw[], double grad[]);
-void    cumsum(int n1, double yy[], double cumw[], double cs[], double grad[], double w[]);
-void    weights(int n1, double yy[], double w[], int **sec_index, int index_end[]);
-void    gradient(int n1, double yy[], double grad[],int **sec_index, int index_end[]);
-void    gradient(int n1, int **N, double yy[], double grad[]);
-void    transfer(int first, int last, double a[], double b[]);
-double  golden(int n1, double F[], double yy[], double yy_new[],
-               int **sec_index, int *index_end,
-               double (*f)(int,double,double*,double*,double*,int**,int*));
-
-int     compute_mle(int n, double **data, double F[], double tt[], double pp[]);
-int     compare (const void * a, const void * b);
-void    sort_data(int n, double data1[], double data2[]);
-void    sort_data0(int m, double data0[], int index0[]);
-void    sort_index(int n, int index1[]);
-double  criterion2(double A, double B, int n1, double tt[], double pp[], double u, double v, double h);
+int compute_mle(int n, double **data, double F[], double tt[], double pp[]);
+void sort_data0(int m, double data0[], int index0[]);
+void sort_index(int m, int index1[]);
+double bdf(double A, double B, int m, double t[], double p[], double u, double h);
+double dens_estimate(double A, double B,  int m, double t[], double p[], double u, double h);
+double KK(double x);
+double K(double x);
+int    compare(const void * a, const void * b);
+int    compare2(const void * a, const void * b);
+double golden(int n1, int **N, int **ind_second, int *index_end, double F[], double yy[], double yy_new[], double (*f)(int,int**,int**,int*,double*,double*,double*,double));
 double  golden(double A, double B, int m, double t[], double p[], double v, double h,
-              double (*f)(double,double,int,double*,double*,double,double,double));
-double  bdf(double A, double B, int m, double t[], double p[], double u, double h);
-double  KK(double x);
+               double (*f)(double,double,int,double*,double*,double,double,double));
+double f_alpha(int n1, int **N, int **ind_second, int *index_end, double F[], double yy[], double yy_new[], double alpha);
+int fenchelviol(int n1, double yy[], double grad[], double tol, double *inprod, double *partsum);
+void transfer(int first, int last, double a[], double b[]);
+double criterion(int n1, int **N, int **ind_second, int *index_end, double yy[]);
+double  criterion2(double A, double B, int n1, double tt[], double pp[], double u, double v, double h);
+void gradient(int n1, int **N, int **ind_second, int *index_end, double yy[], double grad[]);
+void weights(int n1, int **N, int **ind_second, int *index_end, double yy[], double w[]);
+void cumsum(int n1, double yy[], double cumw[], double cs[], double grad[], double w[]);
+void convexminorant(int n1, double cumw[], double cs[], double yy[]);
+void isoreg(int n1, int **N, int **ind_second, int *index_end, double F[]);
 
 // [[Rcpp::export]]
 
-List NPMLE(int N, NumericMatrix data0, double bandwidth=2, double percentile=0.95)
+List NPMLE(int N, NumericMatrix dat0, double bandwidth=2, double percentile=0.95)
 {
     int     i,j,m,n;
-    double  **data,*tt,*pp,*F,mean,quantile,h,p;
+    double  h,*tt,*pp,*F;
+    double  **data;
+    double  mean,quantile,p;
     
     h=(double)bandwidth;
     p=(double)percentile;
@@ -88,7 +83,7 @@ List NPMLE(int N, NumericMatrix data0, double bandwidth=2, double percentile=0.9
     // determine the sample size
     
     n = (int)N;
-    
+       
     data = new double *[n];
     for (i=0;i<n;i++)
         data[i]= new double[2];
@@ -96,7 +91,7 @@ List NPMLE(int N, NumericMatrix data0, double bandwidth=2, double percentile=0.9
     for (i=0;i<n;i++)
     {
         for (j=0;j<2;j++)
-          data[i][j]=(double)data0(i,j);
+          data[i][j]=(double)dat0(i,j);
     }
     
     // tt will contain the points of mass
@@ -151,10 +146,10 @@ List NPMLE(int N, NumericMatrix data0, double bandwidth=2, double percentile=0.9
 
 int compute_mle(int n, double **data, double F[], double tt[], double pp[])
 {
-    int i,j,k,m,n1;
-    int *index0,*ind,*ind1,*index_end,**sec_index;
+    int i,j,k,m,n1,**N,*index_end,**ind_second,**N1;
+    int *index0,*ind,*ind1;
     double min,max_obs1,min_obs2,*data0;
-    double *F1,*tt1,*grad,*cumw;
+    double *F1,*tt1;
     
     data0 = new double[2*n];
     
@@ -167,9 +162,6 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
     ind = new int[2*n+1];
     index0 = new int[2*n+1];
     ind1 = new int[2*n+1];
-    
-    grad= new double[2*n+1];
-    cumw= new double[2*n+1];
     
     sort_data0(2*n,data0,index0);
     
@@ -195,6 +187,8 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
     }
     
     //printf("minimum and maximum are: %15.10f %15.10f\n",min_obs2,max_obs1);
+    
+    // ind maps the indices ind0 to the indices of the array tt
     
     for (i=0;i<2*n;i++)
     {
@@ -244,50 +238,76 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
     for (i=0;i<2*n;i++)
         ind1[i]=ind[index0[i]];
     
-    vector<vector<int> >index(n1+2);
+    N = new int *[n1+1];
+    for (i=0;i<n1+1;i++)
+        N[i]= new int[n1+2];
+    
+    for (i=0;i<=n1;i++)
+    {
+        for (j=0;j<=n1+1;j++)
+            N[i][j]=0;
+    }
     
     for (i=0;i<n;i++)
     {
         if (ind1[n+i]<=n1)
         {
             if (data[i][0]<min_obs2)
-                index[ind1[i]].push_back(ind1[n+i]);
+                N[0][ind1[n+i]]++;
             else
             {
                 if (data[i][0]>=min_obs2 && data[i][1]<=max_obs1)
-                {
-                    index[ind1[i]].push_back(ind1[n+i]);
-                    index[ind1[n+i]].push_back(ind1[i]);
-                }
+                    N[ind1[i]][ind1[n+i]]++;
             }
         }
         else
         {
             if (data[i][0]>=min_obs2)
-                index[ind1[n+i]].push_back(ind1[i]);
+                N[ind1[i]][n1+1]++;
         }
     }
     
-    sec_index = new int *[n1+2];
-    index_end = new int[n1+2];
+    index_end = new int[n1+1];
+    N1        = new int*[n1+1];
+    ind_second = new int*[n1+1];
     
-    for (i=0;i<=n1+1;i++)
+    for (i=0;i<=n1;i++)
     {
-        k = (int)index[i].size();
-        index_end[i]=k;
-        sec_index[i] = new int[k];
-        for (j=0;j<k;j++)
-            sec_index[i][j] = index[i][j];
+        index_end[i]=0;
+        for (j=i+1;j<=n1+1;j++)
+        {
+            if (N[i][j]>0)
+                index_end[i]++;
+        }
     }
     
+    for (i=0;i<=n1;i++)
+    {
+        ind_second[i] = new int[index_end[i]+1];
+        N1[i] = new int[index_end[i]+1];
+    }
+    
+    for (i=0;i<=n1;i++)
+    {
+        k=0;
+        for (j=i+1;j<=n1+1;j++)
+        {
+            if (N[i][j]>0)
+            {
+                k++;
+                N1[i][k]=N[i][j];
+                ind_second[i][k]=j;
+            }
+        }
+    }
     
     F[0]=0.0;
     for (i=1;i<=n1;i++)
          F[i]=i*1.0/(n1+1);
      
     F[n1+1]=1;
-         
-    isoreg(n1,F,sec_index,index_end,cumw,grad);
+             
+    isoreg(n1,N1,ind_second,index_end,F);
     
     F1= new double[n1+2];
     tt1= new double[n1+2];
@@ -315,20 +335,30 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
         tt[i]=tt1[i];
         pp[i] = F[i]-F[i-1];
     }
-
-    for (i=0;i<n1+2;i++)
-        delete[] sec_index[i];
-    delete[] sec_index;
+    
+    for (i=1;i<=m;i++)
+        pp[i]= F[i]-F[i-1];
+    
+    for (i=0;i<n1+1;i++)
+        delete[] ind_second[i];
+    delete[] ind_second;
+    
+    for (i=0;i<n1+1;i++)
+        delete[] N[i];
+    delete[] N;
+    
+    for (i=0;i<n1+1;i++)
+        delete[] N1[i];
+    delete[] N1;
+    
+    delete[]  index_end;
     
     delete[] ind;
     delete[] index0;
-    delete[] index_end;
     delete[] ind1;
     
     delete[] data0;
     delete[] F1;
-    delete[] cumw;
-    delete[] grad;
     delete[] tt1;
         
     return m;
@@ -421,11 +451,9 @@ void sort_index(int m, int index1[])
     delete[] obs;
 }
 
-double golden(int n1, double F[], double yy[], double yy_new[],
-              int **sec_index, int *index_end,
-              double (*f)(int,double,double*,double*,double*,int**,int*))
+double golden(int n1, int **N, int **ind_second, int *index_end, double F[], double yy[], double yy_new[], double (*f)(int,int**,int**,int*,double*,double*,double*,double))
 {
-    double a,b,eps=1.0e-10;
+    double a,b,eps=1.0e-5;
     
     a=0;
     b=1;
@@ -436,7 +464,7 @@ double golden(int n1, double F[], double yy[], double yy_new[],
     
     while (b-a>eps)
     {
-        if ((*f)(n1,xL,F,yy,yy_new,sec_index,index_end)<(*f)(n1,xR,F,yy,yy_new,sec_index,index_end))
+        if ((*f)(n1,N,ind_second,index_end,F,yy,yy_new,xL)<(*f)(n1,N,ind_second,index_end,F,yy,yy_new,xR))
         {
             b = xR;
             xR = xL;
@@ -453,14 +481,14 @@ double golden(int n1, double F[], double yy[], double yy_new[],
     
 }
 
-double f_alpha(int n1, double alpha, double F[], double yy[], double yy_new[], int **sec_index, int index_end[])
+double f_alpha(int n1, int **N, int **ind_second, int *index_end, double F[], double yy[], double yy_new[], double alpha)
 {
     int i;
     
     for (i=1;i<=n1;i++)
         yy_new[i]=(1-alpha)*F[i]+alpha*yy[i];
 
-    return criterion(n1,yy_new,index_end,sec_index);
+    return criterion(n1,N,ind_second,index_end,yy_new);
 }
 
 
@@ -500,67 +528,55 @@ void transfer(int first, int last, double a[], double b[])
     for (i = first; i<= last;i++)    b[i] = a[i];
 }
 
-double criterion(int n1, double yy[], int index_end[], int **sec_index)
+double criterion(int n1, int **N, int **ind_second, int *index_end, double yy[])
 {
     int i,j;
     double sum=0;
     
-    for (j=0;j<index_end[0];j++)
-        sum -= log(yy[sec_index[0][j]]);
-    
-    for (i=1;i<=n1;i++)
+    for (i=0;i<=n1;i++)
     {
-        for (j=0;j<index_end[i];j++)
-            sum -= log(fabs(yy[i]-yy[sec_index[i][j]]))/2;
+        for (j=1;j<=index_end[i];j++)
+            sum -= N[i][j]*log(yy[ind_second[i][j]]-yy[i]);
     }
-    
-    for (j=0;j<index_end[n1+1];j++)
-        sum -= log(1-yy[sec_index[n1+1][j]]);
     
     return sum;
 }
 
-void gradient(int n1, double yy[], double grad[], int **sec_index, int index_end[])
+void gradient(int n1, int **N, int **ind_second, int *index_end, double yy[], double grad[])
 {
     int i,j;
     
-    for (i=0;i<=n1;i++)
+    for (i=1;i<=n1;i++)
         grad[i]=0;
     
-    for (j=0;j<index_end[0];j++)
-        grad[sec_index[0][j]] += 1.0/yy[sec_index[0][j]];
     
-    
-    for (i=1;i<=n1;i++)
+    for (i=0;i<=n1;i++)
     {
-        for (j=0;j<index_end[i];j++)
-            grad[i] += 1.0/(yy[i]-yy[sec_index[i][j]]);
+        for (j=1;j<=index_end[i];j++)
+        {
+            grad[i] -= N[i][j]/(yy[ind_second[i][j]]-yy[i]);
+            grad[ind_second[i][j]] += N[i][j]/(yy[ind_second[i][j]]-yy[i]);
+        }
     }
-    
-    for (j=0;j<index_end[n1+1];j++)
-            grad[sec_index[n1+1][j]] -= 1.0/(1-yy[sec_index[n1+1][j]]);
-        
 }
 
 
-void weights(int n1, double yy[], double w[], int **sec_index, int index_end[])
+void weights(int n1, int **N, int **ind_second, int *index_end, double yy[], double w[])
 {
     int i,j;
     
     for (j=1;j<=n1;j++)
         w[j]=0;
     
-    for (j=0;j<index_end[0];j++)
-        w[sec_index[0][j]] += 1.0/SQR(yy[sec_index[0][j]]);
     
-    for (i=1;i<=n1;i++)
+    for (i=0;i<=n1;i++)
     {
-        for (j=0;j<index_end[i];j++)
-            w[i] += 1.0/SQR(yy[i]-yy[sec_index[i][j]]);
+        for (j=1;j<=index_end[i];j++)
+        {
+            w[i] += N[i][j]/SQR(yy[ind_second[i][j]]-yy[i]);
+            w[ind_second[i][j]] += N[i][j]/SQR(yy[ind_second[i][j]]-yy[i]);
+        }
     }
-    
-    for (j=0;j<index_end[n1+1];j++)
-        w[sec_index[n1+1][j]] += 1.0/SQR(1-yy[sec_index[n1+1][j]]);
 }
 
 
@@ -584,7 +600,7 @@ void convexminorant(int n1, double cumw[], double cs[], double yy[])
     int    i,j,m;
     
     yy[1] = cs[1]/cumw[1];
-    for (i=2;i<=n1;i++)
+    for (i=1;i<=n1;i++)
     {
         yy[i] = (cs[i]-cs[i-1])/(cumw[i]-cumw[i-1]);
         if (yy[i-1]>yy[i])
@@ -609,12 +625,12 @@ void convexminorant(int n1, double cumw[], double cs[], double yy[])
     }
 }
 
-void isoreg(int n1, double F[], int **sec_index, int index_end[], double cumw[], double grad[])
+void isoreg(int n1, int **N, int **ind_second, int *index_end, double F[])
 {
     int i,iter;
     double *yy,*yy_new,alpha,inprod,partsum;
-    double *w,*cs;
-    double tol=1.0e-10;
+    double *w,*cs,*cumw,*grad;
+    double tol=1.0e-6;
     
     yy = new double[n1+2];
     yy_new = new double[n1+2];
@@ -623,28 +639,30 @@ void isoreg(int n1, double F[], int **sec_index, int index_end[], double cumw[],
     yy[n1+1]=1;
     
     cs   = new double[n1+2];
+    cumw    = new double[n1+2];
+    grad    = new double[n1+2];
     w    = new double[n1+2];
             
-    gradient(n1,F,grad,sec_index,index_end);
+    gradient(n1,N,ind_second,index_end,F,grad);
     
     iter=0;
-    while (fenchelviol(n1,F,grad,tol,&inprod,&partsum) && iter<5000)
+    while (fenchelviol(n1,F,grad,tol,&inprod,&partsum) && iter<1000)
     {
         iter++;
-        transfer(1,n1,F,yy);
-        gradient(n1,yy,grad,sec_index,index_end);
-        weights(n1,yy,w,sec_index,index_end);
+        transfer(0,n1,F,yy);
+        gradient(n1,N,ind_second,index_end,yy,grad);
+        weights(n1,N,ind_second,index_end,yy,w);
         cumsum(n1,yy,cumw,cs,grad,w);
         convexminorant(n1,cumw,cs,yy);
 
-        alpha=golden(n1,F,yy,yy_new,sec_index,index_end,f_alpha);
+        alpha=golden(n1,N,ind_second,index_end,F,yy,yy_new,f_alpha);
         
         for (i=1;i<=n1+1;i++)
             F[i] = alpha*yy[i]+(1-alpha)*F[i];
     }
     
     delete[] yy; delete[] yy_new;
-    delete[] cs; delete[] w;
+    delete[] cs; delete[] cumw; delete[] grad; delete[] w;
     
     //printf("Number of iterations: %d\n\n",iter);
     //printf("Fenchel duality criteria: %15.10f     %15.10f\n\n",inprod,partsum);
@@ -722,5 +740,6 @@ double KK(double x)
   
   return y;
 }
+
 
 
