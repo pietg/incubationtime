@@ -71,8 +71,8 @@ void isoreg(int n1, int **N, int **ind_second, int *index_end, double F[]);
 List NPMLE(DataFrame input)
 {
     int     i,n,m,ngrid;
-    double  h,h1,*tt,*pp,*F,sum;
-    double  **data,*data3;
+    double  h,*tt,*pp,*F,sum;
+    double  **data;
     double  *grid,*SMLE,*dens;
     double  M1;
     
@@ -89,19 +89,15 @@ List NPMLE(DataFrame input)
 
     M1=20;
     h  = 0.5*M1*pow(n,-1.0/5);
-    h1 = 0.8*M1*pow(n,-1.0/9);
     
     data = new double *[n];
     for (i=0;i<n;i++)
         data[i]= new double[2];
     
-    data3 = new double[n];
-    
     for (i=0;i<n;i++)
     {
         data[i][0]=(double)data01[i];
         data[i][1]=(double)data02[i];
-        data3[i]=data[i][1]-data[i][0];
     }
 
     F =  new double[2*n+2];
@@ -170,7 +166,7 @@ List NPMLE(DataFrame input)
     delete[] data;
     
     delete[] dens; delete[] pp; delete[] grid; delete[] F; delete[] SMLE;
-    delete[] tt; delete[] data3;
+    delete[] tt;
     
     return out;
 }
@@ -331,39 +327,6 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
             }
         }
     }
-      
-    /*printf("\n");
-    for (i=0;i<=n1;i++)
-    {
-        printf("%10.5f",tt[i]);
-        for (j=0;j<=index_end[i];j++)
-            printf("%5d",N1[i][j]);
-        printf("\n");
-    }
-    printf("\n");
-    
-    printf("\n");
-    for (i=0;i<=n1;i++)
-    {
-        printf("%10.5f",tt[i]);
-        for (j=0;j<=index_end[i];j++)
-            printf("%5d",ind_second[i][j]);
-        printf("\n");
-    }
-    printf("\n");*/
-    
-    /*printf("\n");
-    for (i=0;i<=n1;i++)
-    {
-        printf("%10.5f",tt[i]);
-        for (j=i+1;j<=n1+1;j++)
-        {
-            if (N[i][j]>0)
-                printf("%5d",N[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n");*/
     
     F[0]=0.0;
     for (i=1;i<=n1;i++)
