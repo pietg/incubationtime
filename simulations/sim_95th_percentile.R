@@ -6,7 +6,7 @@
 	source("lognormal_nloptr.R")
 
 	NumIt = 1000
-	n = 500
+	n = 1000
 	p = 0.95
 	
 # data vectors

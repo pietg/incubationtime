@@ -72,12 +72,13 @@ double  golden(int n1, double F[], double yy[], double yy_new[],
                int **sec_index, int *index_end,
                double (*f)(int,double,double*,double*,double*,int**,int*));
 
-double dens_estimate(double A, double B,  int m, double t[], double p[], double u, double h);
-double dens_estimate_conv(double A, double B,  int m, double t[], double p[], double u, double h);
+double  bdf(double A, double B, int m, double t[], double p[], double u, double h);
+double  dens_estimate(double A, double B,  int m, double t[], double p[], double u, double h);
+double  dens_estimate_conv(double A, double B,  int m, double t[], double p[], double u, double h);
+double  KK(double x);
 double  K(double x);
 double  K2(double x);
 void    data_bootstrap(int n, int n1, double M1, double data3[], double **bootstrap_data,double tt[], double pp[], double h, int seed);
-double  data_smooth(int n1, double M1, double tt[], double pp[], double h);
 
 
 // [[Rcpp::export]]
@@ -429,29 +430,7 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
     return m;
 }
                                   
-double data_smooth(int n1, double M1, double tt[], double pp[], double h)
-{
-    int j,seed;
-    double v,w,c;
-    
-    seed = rand();
-    std::mt19937_64 gen(seed);
-    std::uniform_real_distribution<double> dis_unif(0.0,1.0);
-    
-    j=0;
-    w=0;
-    
-    while (j<1)
-    {
-        w=M1*dis_unif(gen);
-        v=dis_unif(gen);
-        c = dens_estimate(0.0,M1,n1,tt,pp,w,h);
-        if (v<c/10)
-            j++;
-    }
-    
-    return w;
-}
+
 
 
 void data_bootstrap(int n, int n1, double M1, double data3[], double **bootstrap_data,double tt[], double pp[], double h, int seed)
@@ -895,6 +874,42 @@ double K2(double x)
         y = -(35*pow(-2 + x,7)*(320 + x*(1120 + x*(1616 + x*(1176 + x*(404 + 5*x*(14 + x)))))))/1757184.0;
    
     return y;
+}
+
+double bdf(double A, double B, int m, double t[], double p[], double u, double h)
+{
+    int       k;
+    double    t1,sum;
+    
+    sum=0;
+    
+    for (k=1;k<=m;k++)
+    {
+        t1=(u-t[k])/h;
+        sum+= KK(t1)*p[k];
+    }
+    return  fmax(sum,0);
+}
+                                  
+
+double KK(double x)
+{
+  double u,y;
+  
+  u=x*x;
+  
+  if (u<=1)
+    y = (16.0 + 35*x - 35*pow(x,3) + 21*pow(x,5) - 5*pow(x,7))/32.0;
+  else
+  {
+    if (x>1)
+      y=1;
+    else
+      y=0;
+    
+  }
+  
+  return y;
 }
 
 

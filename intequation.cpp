@@ -25,23 +25,29 @@ double  K1(double t, double w, double h);
 double  Weibull_df(double x, double a, double b, double M1);
 int     LUPDecompose(double **A, int N, double Tol, int *P);
 void    LUPSolve(double **A, int *P, double *b, int N, double *x);
-
+double Triweight(double x);
 
 // [[Rcpp::export]]
 
 List inteq(double point)
 {
-    int     i,j,ngrid,ngrid1,ngrid2,*P;
+    int     n,i,j,ngrid,ngrid1,ngrid2,*P;
     double  *phi,*psi,M,M1;
     double  alpha,beta,**A;
     double  *grid,tol=1.0e-9;
-    double  step,t,e,w,bandwidth,variance;
-    FILE         *outputfile = NULL;
-    char         filename[128];
+    double  q,step,t,e,w,bandwidth,variance;
+    FILE    *outputfile = NULL;
+    char    filename[128];
     
     // point of evaluation
     
-    t = (double)point;
+    n=5000;
+    
+    q = 10.1771602036;
+    
+    t=q;
+    
+    //t = (double)point;
     
     if (t<2 || t>11)
         Rcpp::stop("Please take a value between 2 and 11!\n");
@@ -81,7 +87,7 @@ List inteq(double point)
         phi[i]=psi[i]=0;
     
     for (i=0;i<=ngrid2;i++)
-        psi[i] = K1(t,grid[i],bandwidth);
+        psi[i] = K1(q,grid[i],bandwidth);
     
     for (i=0;i<=ngrid2;i++)
     {
@@ -95,21 +101,21 @@ List inteq(double point)
         for (j=1;j<=ngrid1;j++)
         {
             e=grid[j];
-            if (i+j<=ngrid2)
+            if (i+j<=ngrid2 && e>1)
             {
                 A[i][i+j] += step/(M*e*(Weibull_df(w+e,alpha,beta,M1)-Weibull_df(w,alpha,beta,M1)));
                 A[i][i] -= step/(M*e*(Weibull_df(w+e,alpha,beta,M1)-Weibull_df(w,alpha,beta,M1)));
             }
-            if (i+j>ngrid2)
+            if (i+j>ngrid2 && e>1)
                 A[i][i] -= step/(M*e*(1.0-Weibull_df(w,alpha,beta,M1)));
             
-            if (i-j>=0)
+            if (i-j>=0 && e>1)
             {
                 A[i][i-j]   += step/(M*e*(Weibull_df(w,alpha,beta,M1)-Weibull_df(w-e,alpha,beta,M1)));
                 A[i][i] -= step/(M*e*(Weibull_df(w,alpha,beta,M1)-Weibull_df(w-e,alpha,beta,M1)));
             }
             
-            if (i-j<=0 && i>0)
+            if (i-j<=0 && i>0  && e>1)
                 A[i][i] -= step/(M*e*Weibull_df(w,alpha,beta,M1));
         }
     }
@@ -131,13 +137,16 @@ List inteq(double point)
     variance=0;
     
     for (i=1;i<=ngrid2;i++)
+        variance += phi[i]*K1(q,grid[i],bandwidth)*step;
+    
+    /*for (i=1;i<=ngrid2;i++)
         variance += SQR(phi[i])*log(M/grid[i])*step/(M*Weibull_df(grid[i],alpha,beta,M1));
     
     for (i=1;i<=ngrid2;i++)
     {
         for (j=0;j<i;j++)
             variance += SQR(phi[i]-phi[j])*SQR(step)/((grid[i]-grid[j])*M*(Weibull_df(grid[i],alpha,beta,M1)-Weibull_df(grid[j],alpha,beta,M1)));
-    }
+    }*/
     
     
     NumericMatrix out1 = NumericMatrix(ngrid2+1,2);
@@ -148,7 +157,7 @@ List inteq(double point)
         out1(i,1)=phi[i];
     }
     
-    double out2 = pow(1000,-3.0/7)*variance;
+    double out2 = pow(n,-1.0/5)*variance;
     
     // make the list for the output, containing the two estimates and the log likelihood
     
@@ -176,12 +185,34 @@ double Weibull_df(double x, double a, double b, double M1)
     }
 }
 
-double K1(double t, double w, double h)
+/*double K1(double t, double w, double h)
 {
     if (fabs((t-w)/h)<=1)
         return 105*SQR(SQR(h)-SQR(t-w))*(t-w)/(16*pow(h,7));
     else
         return 0;
+}*/
+
+double K1(double t, double w, double h)
+{
+    if (fabs((t-w)/h)<=1)
+        return -Triweight((t-w)/h)/h;
+    else
+        return 0;
+}
+
+double Triweight(double x)
+{
+    double u,y;
+    
+    u=x*x;
+
+    if (u<=1)
+        y=(35.0/32)*pow(1-u,3);
+    else
+        y=0.0;
+        
+    return y;
 }
 
 // matrix routines from https://en.wikipedia.org/wiki/LU_decomposition

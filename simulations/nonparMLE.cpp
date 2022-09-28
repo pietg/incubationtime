@@ -135,7 +135,7 @@ List NPMLE(int N, NumericMatrix dat0, double bandwidth=2, double percentile=0.95
     // free memory
     
     for (i=0;i<n;i++)
-        delete data[i];
+        delete[] data[i];
     delete[] data;
     
     delete[] F;

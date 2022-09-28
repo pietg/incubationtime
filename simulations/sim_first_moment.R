@@ -6,7 +6,7 @@
 	source("lognormal_nloptr.R")
 
 	NumIt = 1000
-	n = 500
+	n = 5000
 	
 # data vectors
 	S <- vector("numeric", n)
