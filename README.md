@@ -22,6 +22,6 @@ The directory "simulations" contains (for sample size n=1000, but the sample siz
 
 The first moment is estimated by the mean of the nonparametric MLE (no smoothing is needed in this case). The estimates of the median and 95th percentile are based on the SMLE. R scripts are given in the directory "simulations". The parametric estimates are computed using the R package nloptr.
 
-The directory "bootstrap" contains R scripts for the construction of bootstrap 95% confidence intervals for the distribution function and density of the Wuhan data. They are all derived from the nonparametric MLE. The smoothed bootstrap is used; the ordinary bootstrap is inconsistent for the MLE in this case, as follows from work of Sen and Xu: http://dx.doi.org/10.1016/j.csda.2014.07.007
+The directory "bootstrap" contains R scripts for the construction of bootstrap 95% confidence intervals for the distribution function and density of the Wuhan data. They are all derived from the nonparametric MLE. The smoothed bootstrap is used; the ordinary bootstrap is inconsistent for the MLE in this case.
 
 
