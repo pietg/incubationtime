@@ -9,7 +9,7 @@ B <- output$CI_df
    y3<-B[,4]
 
 pdf("CI_SMLE.pdf")
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)
+plot(c(-100,-100),xlim=c(0,20), ylim=c(0,1), main= "",ylab="",xlab="",bty="n",las=1)
 lines(x1,y1,lwd=2,col="red")
 segments(x1,y2,x1,y3)
 dev.off()
