@@ -12,7 +12,9 @@ The nonparametric maximum likelihood estimator is computed by the EM algorithm a
 
 This repository complements the paper http://www.nieuwarchief.nl/serie5/pdf/naw5-2020-21-3-181.pdf in "Nieuw Archief voor Wiskunde" ("New Archive for Mathematics", a journal for the Dutch mathematicians), discussing the different ways of estimating the distribution of the incubation time. More details about the methods are given in incubation.pdf: https://onlinelibrary.wiley.com/doi/abs/10.1111/stan.12231
 
-Note that the computation of the MLE does not need a choice of kernel or bandwidth. The bandwidths for the SMLE and density estimate can be chosen by a data-adaptive method, described in incubation.pdf, using the smoothed bootstrap. We demonstrate this method for the density estimate in analysis_ICM.R, using 1000 bootstrap samples for each point on a grid. Usually the choice of the kernel does not make much difference, as long as the kernel is sufficiently smooth at the boundary (for this reason we have a preference for the triweight above the Epanechnikov kernel).
+Note that the computation of the MLE does not need a choice of kernel or bandwidth. The bandwidths for the SMLE and density estimate can be chosen by a data-adaptive method, described in incubation.pdf, using the smoothed bootstrap. We demonstrate this method for the density estimate in analysis_ICM.R, using 1000 bootstrap samples for each point on a grid. The R script for this is: bandwidth_choice.R.
+
+Usually the choice of the kernel does not make much difference, as long as the kernel is sufficiently smooth at the boundary (for this reason we have a preference for the triweight above the Epanechnikov kernel).
 
 The directory Lauer_analysis contains an R script for the analysis of a data file of 181 subjects corresponding to the paper "The Incubation Period of Coronavirus Disease 2019 (COVID-19) From Publicly Reported Confirmed Cases: Estimation and Application", Lauer et al., Annals of Internal Medicine, 2020, 577--582. These data are *doubly* censored (the time of becoming symptomatic is only known to belong to an interval). 
 
