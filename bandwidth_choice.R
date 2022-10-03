@@ -26,7 +26,7 @@ pdf("density.pdf")
 dev.off()
 
 pdf("MSE.pdf")
-	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(0,max(y2)), main= "",ylab="",xlab="",bty="n",las=1)
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)
 	lines(x2,y2,lwd=2,col="blue")
 dev.off()	
 	

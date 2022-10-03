@@ -174,12 +174,12 @@ List Compute_bandwidth(DataFrame input)
     for (iter=0;iter<NumIt;iter++)
     {
         seed ++;
-        h[iter] = 2+iter*0.025*M1*pow(n,-1.0/7);
+        h[iter] = 3+iter*0.025*M1*pow(n,-1.0/7);
         
         // MSE is computed via the smooth bootstrap with bootstrap  samples
-        // generated from the (oversmoothed) density estimate dens                                                                                                                           double h, double h0, int seed);
+        // generated from the (oversmoothed) density estimate dens    
     
-        MSE[iter] = MSE_dens(n,m,ngrid,grid,M1,B,data,data3,bootstrap_data,tt,pp, tt_bootstrap,pp_bootstrap,F_bootstrap,dens,h[iter],h0,seed);;
+        MSE[iter] = MSE_dens(n,m,ngrid,grid,M1,B,data,data3,bootstrap_data,tt,pp, tt_bootstrap,pp_bootstrap,F_bootstrap,dens,h[iter],h0,seed);
         
         if (MSE[iter]<min)
         {
@@ -960,7 +960,7 @@ double data_smooth(int m, double M1, double max_dens, double tt[], double pp[], 
         w=M1*dis_unif(gen);
         v=dis_unif(gen);
         c = bdens(M1,m,tt,pp,w,h);
-        if (v<c/(max_dens*M1))
+        if (v<c/(max_dens*(M1+1)))
             j++;
     }
     
