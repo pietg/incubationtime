@@ -169,7 +169,7 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
     
     // index0 maps indices of data1 and data2 to indices of data0
     // The indices of data2 are shifted to n+i
-    // We have: data0[index0[i]]=data1[i] and data0[index0[n+i]]=data2[i], for (i=0,..,n.
+    // We have: data0[index0[i]]=data1[i] and data0[index0[n+i]]=data2[i], for i=0,..,n.
     
 
     min_obs2= 1.0e10;
@@ -189,12 +189,6 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
     //printf("minimum and maximum are: %15.10f %15.10f\n",min_obs2,max_obs1);
     
     // ind maps the indices ind0 to the indices of the array tt
-    
-    for (i=0;i<2*n;i++)
-    {
-        if (data0[i]<min_obs2)
-            ind[i]=0;
-    }
     
     tt[0]=0;
     ind[0]=0;
