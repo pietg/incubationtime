@@ -149,6 +149,9 @@ List ComputeIntervals_df(DataFrame input)
                                   
     for (i=0;i<=ngrid;i++)
         SMLE[i]= bdf(0.0,M1,m,tt,pp,grid[i],h);
+    
+    for (i=0;i<=ngrid;i++)
+        SMLE1[i]= bdf(0.0,M1,m,tt,pp,grid[i],h0);
                                   
     f3 = new double*[NumIt+1];
     for (iter=0;iter<NumIt+1;iter++)
