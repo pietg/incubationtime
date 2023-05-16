@@ -46,11 +46,16 @@ typedef struct
 }
 index_object;
 
+typedef struct
+{
+  double alpha, beta;
+}
+weight_t;
+
 int compute_mle(int n, double **data, double F[], double tt[], double pp[]);
 void sort_data0(int m, double data0[], int index0[]);
 void sort_index(int m, int index1[]);
 double bdf(double A, double B, int m, double t[], double p[], double u, double h);
-double dens_estimate(double A, double B,  int m, double t[], double p[], double u, double h);
 double KK(double x);
 double K(double x);
 int    compare(const void * a, const void * b);
@@ -69,39 +74,51 @@ void cumsum(int n1, double yy[], double cumw[], double cs[], double grad[], doub
 void convexminorant(int n1, double cumw[], double cs[], double yy[]);
 void isoreg(int n1, int **N, int **ind_second, int *index_end, double F[]);
 void data_bootstrap(int n, int m, double M1, double data_exit[], double **bootstrap_data,double tt[], double pp[], double h, int seed);
+
 double data_smooth(int m, double M1, double tt[], double pp[], double h);
+weight_t weight(double x);
+double bdens(double B, int m, double t[], double p[], double u, double h);
+double MSE_df(int n, int m, int ngrid, double grid[], double M1, int B, double **data, double data3[], double **bootstrap_data, double tt[], double pp[], double tt_bootstrap[], double pp_bootstrap[], double F_bootstrap[], double df1[], double h, double h0, int seed);
+
 
 // [[Rcpp::export]]
 
-List ComputeIntervals_df(DataFrame input)
+List Compute_bandwidth(DataFrame input)
 {
-    int     i,m,m_bootstrap,n,ngrid,NumIt,iter,percentile1,percentile2,seed;
-    double  **data,**bootstrap_data,*data3,*tt,*pp,*F,h,h0;
-    double  *SMLE,*SMLE1,*F_bootstrap,*SMLE_bootstrap,*pp_bootstrap,*tt_bootstrap;
-    double  M1,*grid,*lowbound,*upbound,**f3,*f4;
+    int     B,i,m,n,ngrid,NumIt,iter,seed;
+    double  **data,**bootstrap_data,*data3,*tt,*pp,*F,*h,h0,*MSE;
+    double  *F_bootstrap,*pp_bootstrap,*tt_bootstrap;
+    double  M1,*df,*df1,*grid;
+    double  min,h_min;
     
     DataFrame DF = Rcpp::DataFrame(input);
     NumericVector data01 = DF["V1"];
     NumericVector data02 = DF["V2"];
     
     // determine the sample size
-    
     n = (int)data01.size();
     
-    // Number of bootstrap samples
-    NumIt = 1000;
+    // Number of bandwidths tried
+    NumIt = 30;
+    
+    // number of bootstrap samples in the estimates of the MSE
+    B=10000;
+    
+    // contains the (bootstrap) MSE's for different bandwidths
+    MSE =  new double[NumIt];
+    
+    // the array h contains the different bandwidths tried
+    h =  new double[NumIt];
     
     // upper bound incubation time
-    
-    M1 = 20;
+    M1 = 15;
     seed=1;
+        
+    // h0 is the bandwidth of the (oversmoothed) estimtate of the density
+    // with which the bootstrap estimates are compared
+    //and from which the bootstrap samples are generated.
     
-    //h= 0.5*M1*pow(n,-1.0/5);
-    h=6.216281;
     h0 = 0.8*M1*pow(n,-1.0/9);
-    
-    percentile1=round(0.025*NumIt);
-    percentile2=round(0.975*NumIt);
     
     data = new double *[n];
     for (i=0;i<n;i++)
@@ -126,71 +143,62 @@ List ComputeIntervals_df(DataFrame input)
                                   
     for (i=0;i<=ngrid;i++)
         grid[i] = M1*i/ngrid;
-    
-    // tt will contain the points of mass
-    // pp will contain the masses
-    
-    tt = new double[2*n+2];
-    pp = new double[2*n+2];
-                                  
-    pp_bootstrap = new double[2*n+2];
-    tt_bootstrap = new double[2*n+2];
-                                  
-    // F will be the array containing the values of the MLE
+
+    // F and F_bootstrap are the discrete MLEs
+
     F =  new double[2*n+2];
     F_bootstrap =  new double[2*n+2];
     
-    // m is the number of masses
+    // df1 is the (oversmoothed) estimate of the df with which
+    // the bootstrap estimates dens_bootstrap are compared
+    // and from which the bootstrap samples are generated.
     
+    df =  new double[ngrid+1];
+    df1 =  new double[ngrid+1];
+    
+    // masses and location of masses of the MLE
+    pp = new double[2*n+3];
+    tt = new double[2*n+3];
+    pp_bootstrap = new double[2*n+3];
+    tt_bootstrap = new double[2*n+3];
+    
+    // m is the number of masses of the (discrete) MLE
     m = compute_mle(n,data,F,tt,pp);
-                                  
-    SMLE =  new double[ngrid+1];
-    SMLE1 =  new double[ngrid+1];
-    SMLE_bootstrap =  new double[ngrid+1];
-                                  
-    for (i=0;i<=ngrid;i++)
-        SMLE[i]= bdf(0.0,M1,m,tt,pp,grid[i],h);
+
     
+    // df is an estimate of the df using boundary kernels, df1 is the pilot df
     for (i=0;i<=ngrid;i++)
-        SMLE1[i]= bdf(0.0,M1,m,tt,pp,grid[i],h0);
-                                  
-    f3 = new double*[NumIt+1];
-    for (iter=0;iter<NumIt+1;iter++)
-         f3[iter] = new double[ngrid+1];
-                                      
-    f4 = new double[NumIt+1];
-                                  
-    lowbound = new double[ngrid+1];
-    upbound  = new double[ngrid+1];
-                                  
+        df1[i]= bdf(0,M1,m,tt,pp,grid[i],h0);
+
+    min=1000;
+    h_min = 10;
+    
+    Rcout << "30 bandwidths and MSE's from 10,000 bootstrap samples for each bandwidth:" << std::endl << std::endl;
+            
     for (iter=0;iter<NumIt;iter++)
     {
-        seed++;
-        data_bootstrap(n,m,M1,data3,bootstrap_data,tt,pp,h0,seed);
-        m_bootstrap = compute_mle(n,bootstrap_data,F_bootstrap,tt_bootstrap,pp_bootstrap);
-                                  
-        for (i=0;i<=ngrid;i++)
-            SMLE_bootstrap[i]= bdf(0.0,M1,m_bootstrap,tt_bootstrap,pp_bootstrap,grid[i],h);
-                                      
-        for (i=0;i<=ngrid;i++)
-            f3[iter][i]= SMLE_bootstrap[i]-SMLE1[i];
+        seed ++;
+        h[iter] = 3+iter*0.025*M1*pow(n,-1.0/5);
         
-        Rcout << iter+1 << endl;
-     }
-                                      
-                                  
-    for (i=0;i<=ngrid;i++)
-    {
-        for (iter=0;iter<NumIt;iter++)
-            f4[iter]=f3[iter][i];
-                                      
-        qsort(f4,NumIt,sizeof(double),compare2);
-                                      
-        lowbound[i] = fmax(0,SMLE[i]-f4[percentile2-1]);
-        upbound[i]  = fmax(0,fmin(1,SMLE[i]-f4[percentile1-1]));
-    }
-                                  
+        // MSE is computed via the smooth bootstrap with bootstrap  samples
+        // generated from the (oversmoothed) df estimate
     
+        MSE[iter] = MSE_df(n,m,ngrid,grid,M1,B,data,data3,bootstrap_data,tt,pp, tt_bootstrap,pp_bootstrap,F_bootstrap,df1,h[iter],h0,seed);
+        
+        if (MSE[iter]<min)
+        {
+            min = MSE[iter];
+            h_min = h[iter];
+        }
+                
+        Rcout  << setw(10) << iter+1 << setprecision(6) <<  setw(15) << h[iter] << setprecision(6) <<  setw(15) << MSE[iter]  << std::endl;
+    }
+    
+    Rcout << std::endl;
+            
+    for (i=0;i<=ngrid;i++)
+        df[i]= bdf(0,M1,m,tt,pp,grid[i],h_min);
+                                  
     NumericMatrix out1 = NumericMatrix(m+1,2);
     
     for (i=0;i<=m;i++)
@@ -199,22 +207,28 @@ List ComputeIntervals_df(DataFrame input)
         out1(i,1)=F[i];
     }
     
-    int out2 = m;
+    double out2 = h_min;
     
-    NumericMatrix out3 = NumericMatrix(ngrid+1,4);
+    NumericMatrix out3 = NumericMatrix(ngrid+1,2);
     
-    for (i=0;i<=ngrid;i++)
+    for (i=1;i<=ngrid;i++)
     {
         out3(i,0)=grid[i];
-        out3(i,1)=SMLE[i];
-        out3(i,2)=lowbound[i];
-        out3(i,3)=upbound[i];
+        out3(i,1)=df[i];
     }
     
- 
+    NumericMatrix out4 = NumericMatrix(NumIt,2);
+    
+    for (i=0;i<NumIt;i++)
+    {
+        out4(i,0)=h[i];
+        out4(i,1)=MSE[i];
+    }
+    
     // make the list for the output
     
-    List out = List::create(Named("MLE")=out1,Named("m")=out2,Named("CI_df")=out3);
+    List out = List::create(Named("MLE")=out1,Named("bandwidth")=out2,
+                            Named("SMLE")=out3,Named("MSE")=out4);
 
     // free memory
     
@@ -226,16 +240,10 @@ List ComputeIntervals_df(DataFrame input)
         delete bootstrap_data[i];
     delete[] bootstrap_data;
     
-    for (i=0;i<NumIt+1;i++)
-        delete f3[i];
-    delete[] f3;
-    
-    delete[] f4; delete[] lowbound; delete[] upbound;
-    
-    delete[] F; delete[] data3;
+    delete[] F; delete[] F_bootstrap;  delete[] data3;
     delete[] tt; delete[] pp; delete[] tt_bootstrap; delete[] pp_bootstrap;
-    delete[] grid; delete[] F_bootstrap; delete[] SMLE; delete[] SMLE_bootstrap;
-    delete[] SMLE1;
+    delete[] grid; delete[] df; delete[] df1;
+    delete[] h; delete[] MSE;
     
     return out;
 }
@@ -396,40 +404,7 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
       }
     }
   }
-  
-  /*printf("\n");
-   for (i=0;i<=n1;i++)
-   {
-   printf("%10.5f",tt[i]);
-   for (j=0;j<=index_end[i];j++)
-   printf("%5d",N1[i][j]);
-   printf("\n");
-   }
-   printf("\n");
-   
-   printf("\n");
-   for (i=0;i<=n1;i++)
-   {
-   printf("%10.5f",tt[i]);
-   for (j=0;j<=index_end[i];j++)
-   printf("%5d",ind_second[i][j]);
-   printf("\n");
-   }
-   printf("\n");*/
-  
-  /*printf("\n");
-   for (i=0;i<=n1;i++)
-   {
-   printf("%10.5f",tt[i]);
-   for (j=i+1;j<=n1+1;j++)
-   {
-   if (N[i][j]>0)
-   printf("%5d",N[i][j]);
-   }
-   printf("\n");
-   }
-   printf("\n");*/
-  
+
   F[0]=0.0;
   for (i=1;i<=n1;i++)
     F[i]=i*1.0/(n1+1);
@@ -493,11 +468,13 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
   return m;
 }
 
+// compare integers
 int compare(const void * a, const void * b)
 {
   return ( *(int*)a - *(int*)b );
 }
 
+// compare doubles
 int compare2(const void *a, const void *b)
 {
     double x = *(double*)a;
@@ -833,6 +810,8 @@ double golden(double A, double B, int m, double t[], double p[], double v, doubl
     
 }
 
+
+
 double bdf(double A, double B, int m, double t[], double p[], double u, double h)
 {
     int       k;
@@ -848,6 +827,76 @@ double bdf(double A, double B, int m, double t[], double p[], double u, double h
         sum+= (KK(t1)+KK(t2)-KK(t3))*p[k];
     }
     return  fmax(sum,0);
+}
+
+double MSE_df(int n, int m, int ngrid, double grid[], double M1, int B, double **data, double data3[], double **bootstrap_data, double tt[], double pp[], double tt_bootstrap[], double pp_bootstrap[], double F_bootstrap[], double df1[], double h, double h0, int seed)
+{
+  int i,iter,m_bootstrap,seed1;
+  double MSE;
+  
+  MSE=0;
+  seed1=seed;
+    
+  for (iter=1;iter<=B;iter++)
+  {
+    seed1++;
+    data_bootstrap(n,m,M1,data3,bootstrap_data,tt,pp,h0,seed1);
+    
+    m_bootstrap = compute_mle(n,bootstrap_data,F_bootstrap,
+                              tt_bootstrap,pp_bootstrap);
+    
+    for (i=1;i<ngrid;i++)
+      MSE += SQR(bdf(0,M1,m_bootstrap,tt_bootstrap,pp_bootstrap,grid[i],h)-df1[i]);
+  }
+  
+  return MSE/B;
+}
+
+
+double bdens(double B, int m, double t[], double p[], double u, double h)
+{
+    int             k;
+    double          rho,sum,x;
+    weight_t        weights;
+    
+    sum=0;
+    if (u-h>=0 && u+h<=B)
+    {
+        for (k=1;k<=m;k++)
+        {
+            x=(u-t[k])/h;
+            sum+= K(x)*p[k]/h;
+        }
+    }
+    else
+    {
+        if (u<h)
+        {
+            rho = u/h;
+            weights=weight(rho);
+            for (k=1;k<=m;k++)
+            {
+                x=(u-t[k])/h;
+                sum += (K(x)*weights.alpha + x*K(x)*weights.beta)*p[k]/h;
+            }
+            
+        }
+        else
+        {
+            if (u>B-h)
+            {
+                rho = (B-u)/h;
+                weights=weight(rho);
+                for (k=1;k<=m;k++)
+                {
+                    x=(u-t[k])/h;
+                    sum += (K(x)*weights.alpha - x*K(x)*weights.beta)*p[k]/h;
+                }
+            }
+        }
+    }
+     
+    return fmax(0,sum);
 }
 
 double KK(double x)
@@ -921,5 +970,45 @@ double data_smooth(int m, double M1, double tt[], double pp[], double h)
     }*/
     
     return w;
+}
+
+double K(double x)
+{
+  double u,y;
+  
+  u=x*x;
+  
+  if (u<=1)
+    y=(35.0/32)*pow(1-u,3);
+  else
+    y=0.0;
+  
+  return y;
+}
+
+weight_t weight(double x)
+{
+  short i;
+  double y1, y2, y3, y4;
+  double *xx;
+  weight_t temp;
+  
+  xx= new double[10];
+  xx[1] = x;
+  for (i=2;i<=9;i++)
+    xx[i] = x * xx[i - 1];
+  
+  y1 = 0.5 + (35.0*xx[1])/32.0-(35.0*xx[3])/32.0+(21.0*xx[5])/32.0-(5.0*xx[7])/32.0;
+  y2 = -35.0/256.0+(35.0 * xx[2])/64.0-(105.0*xx[4])/128.0+(35.0*xx[6])/64.0-(35.0*xx[8])/256.0;
+  y3 = 1.0/18 + 25.0*xx[3]/96 - 21.0*xx[5]/32 + 15.0*xx[7]/32 - 35.0*xx[9]/288;
+  
+  
+  y4 = y1 * y3 - (y2*y2);
+  temp.alpha = y3 / y4;
+  temp.beta = -y2 / y4;
+  
+  delete[] xx;
+  
+  return temp;
 }
 

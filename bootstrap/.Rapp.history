@@ -1,380 +1,958 @@
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_df.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	sourceCpp("Weibull.cpp")#
+	#sourceCpp("EM.cpp")#
 #
-   plot(c(-100,-100),xlim=c(0,max(x1)), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-   lines(x1,y1,lwd=2,type ="s",col="red")#
-   segments(x1,y2,x1,y3)
-ls()
+	A<-read.table("inputdata_Wuhan.txt")#
+	#output1 <- EM(A)#
+	output <- Weibull(A)#
+#
+	#B1 <- output1$MLE#
+	#C1 <- output1$SMLE#
+	#D1 <- output1$dens#
+	B2 <- output$df#
+	C2 <- output$dens#
+#
+	#x<-B1[,1]#
+	#y<-B1[,2]#
+	#x1<-C1[,1]	#
+	#y1<-C1[,2]#
+	t<-B2[,1]#
+	u<-B2[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,1), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue",type='s')#
+	lines(t,u,lwd=2, lty=1,col="red")#
+	#lines(t1,u1,lwd=2, lty=1,col="blue")
+output1
+output2$parameters
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_df.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE.cpp")#
 #
-   plot(c(-100,-100),xlim=c(0,max(x1)), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-   lines(x1,y1,lwd=2,type ="s",col="red")#
-   segments(x1,y2,x1,y3)
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-C1[,1]	#
+	y1<-C1[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue",type='s')#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_df.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE.cpp")#
 #
-   plot(c(-100,-100),xlim=c(0,max(x1)), ylim=c(0,12), main= "",ylab="",xlab="",bty="n",las=1)#
-   lines(x1,y1,lwd=2,type ="s",col="red")#
-   segments(x1,y2,x1,y3)
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-   lines(x1,y1,lwd=2,type ="s",col="red")#
-   segments(x1,y2,x1,y3)
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-C1[,1]	#
+	y1<-C1[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(y,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	lines(x,y,lwd=2,col="red",type='s')#
+	lines(x1,y1,lwd=2,col="blue",type='s')#
+	#lines(t,u,lwd=2, lty=1,col="blue")#
+	#lines(t1,u1,lwd=2, lty=2,col="red")
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_df.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE.cpp")#
 #
-   plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-   lines(x1,y1,lwd=2,type ="s",col="red")#
-   segments(x1,y2,x1,y3)
-plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-   lines(x1,y1,lwd=2,type ="s",col="red")#
-   segments(x1,y2,x1,y3)
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-C1[,1]	#
+	y1<-C1[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(y,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	lines(x,y,lwd=2,col="red",type='s')#
+	lines(x1,y1,lwd=2,col="blue")#
+	#lines(t,u,lwd=2, lty=1,col="blue")#
+	#lines(t1,u1,lwd=2, lty=2,col="red")
+library(lbfgs)#
+   A<-read.table("inputdata_Wuhan.txt")#
+   data1<-A[,1]#
+   data2<-A[,2]#
+   n<-88#
+   alpha=vector("numeric",2)#
+criterion=function(alpha)#
+{#
+	calc=0;#
+	for (i in 1:n)#
+	{#
+		calc = calc+log(exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]));#
+	}#
+	return(-calc);#
+}#
+#
+grad=function(alpha)#
+{#
+	calc1=0;#
+	calc2=0;#
+	for (i in 1:n)#
+	{#
+		denom = exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]);#
+		if (data1[i]==0)#
+		{#
+			calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom;#
+		}#
+		else#
+		{#
+			calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom-alpha[2]*exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])*log(data1[i])/denom;#
+		}#
+		calc2 = calc2+exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])/denom-exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])/denom;#
+	}#
+	return(c(-calc1,-calc2));#
+}#
+#
+output <- lbfgs(criterion, grad, c(2,0.002))#
+output$par
+C1
+D1
+B1
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_df.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_ICM.cpp")#
 #
-   plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-   lines(x1,y1,lwd=2,type ="s",col="red")#
-   segments(x1,y2,x1,y3)
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-   lines(x1,y1,lwd=2,type ="s",col="red")#
-   segments(x1,y2,x1,y3)
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_df.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_ICM.cpp")#
 #
-   plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-   lines(x1,y1,lwd=2,type ="s",col="red")#
-   segments(x1,y2,x1,y3)
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	lines(x,y,lwd=2,col="red",type='s')#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+output1$bandwidth
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue")#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_df.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_EM.cpp")#
+#
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue")#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+library(Rcpp)#
+sourceCpp("confidence_intervals.cpp")#
+output <- CI()#
+#
+C<-output$MLE#
+D<-output$SMLE#
+E<-output$dens#
+CI<-output$CI#
+#
+a<-3.035140901#
+b<-0.002619475#
+f <- function(x) {a*b*exp(-b*x^a)*x^(-1+a)}#
+#
+x1<-E[,1]#
+y1<-E[,2]#
+u1<-CI[,1]#
+u2<-CI[,2]#
+u3<-CI[,3]#
+x0 <-seq(0,max(x1),by=0.01)#
+y0<-f(x0)#
+#
+plot(c(-10000,-10000),xlim=c(0,14), ylim=c(0.0,max(u3)), main= "", ylab="",xlab="",bty="n",las=1)#
+#
+lines(x0,y0,lwd=2,lty=2,col="red")#
+lines(x1,y1,lty=1,lwd=2,col="blue")#
+segments(u1,u2,u1,u3)
+library(Rcpp)#
+ sourceCpp("intequation.cpp")#
+ output <- inteq(6.0)
+output$MLE
+output$dens
+# Simulations of the variances of the density estimate#
+# for 1000 samples of n=1000 for a model of the#
+# distribution the incubation time#
+#
+ library(Rcpp)#
+ sourceCpp("continuous_model.cpp")#
+ output <- simulation()
+# Simulations of the variances of the density estimate#
+# for 1000 samples of n=1000 for a model of the#
+# distribution the incubation time#
+#
+ library(Rcpp)#
+ library(cpp11)#
+ sourceCpp("continuous_model.cpp")#
+ output <- simulation()
+# Simulations of the variances of the density estimate#
+# for 1000 samples of n=1000 for a model of the#
+# distribution the incubation time#
+#
+ library(Rcpp)#
+ library(Rcpp11)#
+ sourceCpp("continuous_model.cpp")#
+ output <- simulation()
+library(lbfgs)#
+   A<-read.table("inputdata_Wuhan.txt")#
+   data1<-A[,1]#
+   data2<-A[,2]#
+   n<-88#
+   alpha=vector("numeric",2)#
+criterion=function(alpha)#
+{#
+	calc=0;#
+	for (i in 1:n)#
+	{#
+		calc = calc+log(exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]));#
+	}#
+	return(-calc);#
+}#
+#
+grad=function(alpha)#
+{#
+	calc1=0;#
+	calc2=0;#
+	for (i in 1:n)#
+	{#
+		denom = exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]);#
+		if (data1[i]==0)#
+		{#
+			calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom;#
+		}#
+		else#
+		{#
+			calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom-alpha[2]*exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])*log(data1[i])/denom;#
+		}#
+		calc2 = calc2+exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])/denom-exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])/denom;#
+	}#
+	return(c(-calc1,-calc2));#
+}#
+#
+output <- lbfgs(criterion, grad, c(2,0.002))#
+output$par
+library(lbfgs)#
+   A<-read.table("inputdata_Wuhan.txt")#
+   data1<-A[,1]#
+   data2<-A[,2]#
+   n<-88#
+   alpha=vector("numeric",2)#
+criterion=function(alpha)#
+{#
+	calc=0;#
+	for (i in 1:n)#
+	{#
+		calc = calc+log(exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]));#
+	}#
+	return(-calc);#
+}#
+#
+grad=function(alpha)#
+{#
+	calc1=0;#
+	calc2=0;#
+	for (i in 1:n)#
+	{#
+		denom = exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]);#
+		if denom>0)#
+		{#
+			if (data1[i]==0)#
+			{#
+			calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom;#
+			}#
+			else#
+			{#
+				calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom-								alpha[2]*exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])*log(data1[i])/denom;#
+			}#
+			calc2 = calc2+exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])/denom-exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])/denom;#
+		}#
+	}#
+	return(c(-calc1,-calc2));#
+}#
+#
+output <- lbfgs(criterion, grad, c(2,0.002))#
+output$par
+library(Rcpp)#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_ICM.cpp")#
+#
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue")#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+library(Rcpp)#
+ sourceCpp("intequation.cpp")#
+ output <- inteq(6.0)
+### R-code for phi#
+### Piet Groeneboom#
+   B<-read.table("phi.txt")#
    x1<-B[,1]#
    y1<-B[,2]#
    y2<-B[,3]#
-   y3<-B[,4]#
+   a1<-min(x1)#
+   b1<-max(x1)#
+   a2<-min(y1,y2)#
+   b2<-max(y1,y2)#
+   plot(c(-10000,-10000),xlim=c(0,20), ylim=c(a2,b2), main= "", ylab="",xlab="",bty="n",las=1)#
+   lines(x1, y1,lwd=2,col="red")#
+   lines(x1, y2,lwd=2,col="blue",lty=2)
+library(Rcpp)#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_ICM.cpp")#
 #
-pdf("CI_SMLE.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue")#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+output2
+library(lbfgs)#
+   A<-read.table("inputdata_Wuhan.txt")#
+   data1<-A[,1]#
+   data2<-A[,2]#
+   n<-88#
+   alpha=vector("numeric",2)#
+criterion=function(alpha)#
+{#
+	calc=0;#
+	for (i in 1:n)#
+	{#
+		calc = calc+log(exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]));#
+	}#
+	return(-calc);#
+}#
+#
+grad=function(alpha)#
+{#
+	calc1=0;#
+	calc2=0;#
+	for (i in 1:n)#
+	{#
+		denom = exp(-alpha[2]*data1[i]^alpha[1])-exp(-alpha[2]*data2[i]^alpha[1]);#
+		if (denom>0)#
+		{#
+			if (data1[i]==0)#
+			{#
+			  calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom;#
+			}#
+			else#
+			{#
+				calc1 = calc1+alpha[2]*exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])*log(data2[i])/denom-alpha[2]*exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])*log(data1[i])/denom;#
+			}#
+			calc2 = calc2+exp(-alpha[2]*data2[i]^alpha[1])*(data2[i]^alpha[1])/denom-exp(-alpha[2]*data1[i]^alpha[1])*(data1[i]^alpha[1])/denom;#
+		}#
+	}#
+	return(c(-calc1,-calc2));#
+}#
+#
+output <- lbfgs(criterion, grad, c(2,0.002))#
+output$par
+library(Rcpp)#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_ICM.cpp")#
+#
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue")#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+output2
+library(Rcpp)#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_EM.cpp")#
+#
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue")#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+library(Rcpp)#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_ICM.cpp")#
+#
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$SMLE#
+	D1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-D1[,1]#
+	u<-D1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]	#
+plot(c(-1000,-1000),xlim=c(0,14),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	#lines(x,y,lwd=2,col="red",type='s')#
+	#lines(x1,y1,lwd=2,col="blue")#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+library(Rcpp)#
+ sourceCpp("intequation.cpp")#
+ output <- inteq(6.0)
+output
+### R-code for phi#
+### Piet Groeneboom#
+   B<-read.table("phi.txt")#
+   x1<-B[,1]#
+   y1<-B[,2]#
+   y2<-B[,3]#
+   a1<-min(x1)#
+   b1<-max(x1)#
+   a2<-min(y1,y2)#
+   b2<-max(y1,y2)#
+   plot(c(-10000,-10000),xlim=c(0,20), ylim=c(a2,b2), main= "", ylab="",xlab="",bty="n",las=1)#
+   lines(x1, y1,lwd=2,col="red")#
+   lines(x1, y2,lwd=2,col="blue",lty=2)
+library(Rcpp)#
+ sourceCpp("intequation.cpp")#
+ output <- inteq(6.0)
+output
+library(Rcpp)#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_ICM.cpp")#
+#
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$mean#
+	D1 <- output1$SMLE#
+	E1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-E1[,1]#
+	u<-E1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]#
+	plot(c(-1000,-1000),xlim=c(0,15),ylim=c(0,max(y,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	lines(x,y,lwd=2,col="red",type='s')#
+	lines(x1,y1,lwd=2,col="blue")#
+	plot(c(-1000,-1000),xlim=c(0,15),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+plot(c(-1000,-1000),xlim=c(0,15),ylim=c(0,max(y,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	lines(x,y,lwd=2,col="red",type='s')#
+	lines(x1,y1,lwd=2,col="blue")
+library(Rcpp)#
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_density_choice.cpp")#
+	output <- Compute_bandwidth(A)#
+	B <- output$density#
+	C <- output$MSE#
+   	x1<-B[,1]#
+   	y1<-B[,2]#
+   	x2<-C[,1]#
+   	y2<-C[,2]#
+    a<-3.035140901#
+	b<-0.002619475#
+	f <- function(x) {a*b*exp(-b*x^a)*x^(-1+a)/(1-exp(-b*20^a))}	#
+	x0 <-seq(0,20,by=0.01)#
+	y0<-f(x0)#
+#
+output$bandwidth#
+#
+pdf("density.pdf")#
+	plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")#
+dev.off()#
+#
+pdf("MSE.pdf")#
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(0,max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")#
 dev.off()
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_Sen_Xu.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_density_choice.cpp")#
+	output <- Compute_bandwidth(A)#
+	B <- output$density#
+	C <- output$MSE#
+   	x1<-B[,1]#
+   	y1<-B[,2]#
+   	x2<-C[,1]#
+   	y2<-C[,2]#
+    a<-3.035140901#
+	b<-0.002619475#
+	f <- function(x) {a*b*exp(-b*x^a)*x^(-1+a)/(1-exp(-b*20^a))}	#
+	x0 <-seq(0,20,by=0.01)#
+	y0<-f(x0)#
 #
-pdf("CI_SSen_Xu.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
+output$bandwidth#
+#
+pdf("density.pdf")#
+	plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")#
+dev.off()#
+#
+pdf("MSE.pdf")#
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")#
 dev.off()
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_Sen_Xu.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	sourceCpp("Weibull.cpp")#
+	sourceCpp("NPMLE_ICM.cpp")#
 #
-pdf("CI_Sen_Xu.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
+	A<-read.table("inputdata_Wuhan.txt")#
+	output1 <- NPMLE(A)#
+	output2 <- Weibull(A)#
+#
+	B1 <- output1$MLE#
+	C1 <- output1$mean#
+	D1 <- output1$SMLE#
+	E1 <- output1$dens#
+	B2 <- output2$df#
+	C2 <- output2$dens#
+#
+	x<-B1[,1]#
+	y<-B1[,2]#
+	x1<-B2[,1]	#
+	y1<-B2[,2]#
+	t<-E1[,1]#
+	u<-E1[,2]#
+	t1<-C2[,1]	#
+	u1<-C2[,2]#
+	plot(c(-1000,-1000),xlim=c(0,15),ylim=c(0,max(y,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	lines(x,y,lwd=2,col="red",type='s')#
+	lines(x1,y1,lwd=2,col="blue")#
+	plot(c(-1000,-1000),xlim=c(0,15),ylim=c(0,max(u,u1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(t,u,lwd=2, lty=1,col="blue")#
+	lines(t1,u1,lwd=2, lty=2,col="red")
+plot(c(-1000,-1000),xlim=c(0,15),ylim=c(0,max(y,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+#
+	lines(x,y,lwd=2,col="red",type='s')#
+	lines(x1,y1,lwd=2,col="blue")
+library(Rcpp)#
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_density_choice.cpp")#
+	output <- Compute_bandwidth(A)#
+	B <- output$density#
+	C <- output$MSE#
+   	x1<-B[,1]#
+   	y1<-B[,2]#
+   	x2<-C[,1]#
+   	y2<-C[,2]#
+    a<-3.035140901#
+	b<-0.002619475#
+	f <- function(x) {a*b*exp(-b*x^a)*x^(-1+a)/(1-exp(-b*20^a))}	#
+	x0 <-seq(0,20,by=0.01)#
+	y0<-f(x0)#
+#
+output$bandwidth#
+#
+pdf("density.pdf")#
+	plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")#
+dev.off()#
+#
+pdf("MSE.pdf")#
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")#
 dev.off()
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_Sen_Xu.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_df_choice.cpp")#
+	output <- Compute_bandwidth(A)#
+	B <- output$SMLE#
+	C <- output$MSE#
+   	x1<-B[,1]#
+   	y1<-B[,2]#
+   	x2<-C[,1]#
+   	y2<-C[,2]#
+    a<-3.035140901#
+	b<-0.002619475#
+	f <- function(x) {1-exp(-b*x^a)/(1-exp(-b*20^a))}	#
+	x0 <-seq(0,20,by=0.01)#
+	y0<-f(x0)#
 #
-pdf("CI_Sen_Xu.pdf")#
-plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
+output$bandwidth#
+#
+pdf("SMLE.pdf")#
+	plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")#
+dev.off()#
+#
+pdf("MSE.pdf")#
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")#
 dev.off()
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_Sen_Xu.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_df_choice.cpp")#
+	output <- Compute_bandwidth(n,A)#
+	B <- output$SMLE#
+	C <- output$MSE#
+   	x1<-B[,1]#
+   	y1<-B[,2]#
+   	x2<-C[,1]#
+   	y2<-C[,2]#
+    a<-3.035140901#
+	b<-0.002619475#
+	f <- function(x) {1-exp(-b*x^a)/(1-exp(-b*20^a))}	#
+	x0 <-seq(0,20,by=0.01)#
+	y0<-f(x0)#
 #
-pdf("CI_Sen_Xu.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
+output$bandwidth#
+#
+pdf("SMLE.pdf")#
+	plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")#
+dev.off()#
+#
+pdf("MSE.pdf")#
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")#
 dev.off()
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_density.cpp")#
-output <- ComputeIntervals_density(A)#
-B <- output$CI_density#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_df_choice.cpp")#
+	output <- Compute_bandwidth(A)#
+	B <- output$SMLE#
+	C <- output$MSE#
+   	x1<-B[,1]#
+   	y1<-B[,2]#
+   	x2<-C[,1]#
+   	y2<-C[,2]#
+    a<-3.035140901#
+	b<-0.002619475#
+	f <- function(x) {1-exp(-b*x^a)/(1-exp(-b*20^a))}	#
+	x0 <-seq(0,20,by=0.01)#
+	y0<-f(x0)#
 #
-pdf("CI_SMLE.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
+output$bandwidth#
+#
+pdf("SMLE.pdf")#
+	plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")#
+dev.off()#
+#
+pdf("MSE.pdf")#
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")#
 dev.off()
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_density.cpp")#
-output <- ComputeIntervals_density(A)#
-B <- output$CI_density#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_df_choice.cpp")#
+	output <- Compute_bandwidth(A)#
+	B <- output$SMLE#
+	C <- output$MSE#
+   	x1<-B[,1]#
+   	y1<-B[,2]#
+   	x2<-C[,1]#
+   	y2<-C[,2]#
+    a<-3.035140901#
+	b<-0.002619475#
+	f <- function(x) {1-exp(-b*x^a)/(1-exp(-b*20^a))}	#
+	x0 <-seq(0,20,by=0.01)#
+	y0<-f(x0)#
 #
-pdf("CI_density.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
+output$bandwidth#
+#
+pdf("SMLE.pdf")#
+	plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")#
+dev.off()#
+#
+pdf("MSE.pdf")#
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")#
+dev.off()
+output
+output$SMLE
+library(Rcpp)#
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_df_choice.cpp")#
+	output <- Compute_bandwidth(A)#
+	B <- output$SMLE#
+	C <- output$MSE#
+   	x1<-B[,1]#
+   	y1<-B[,2]#
+   	x2<-C[,1]#
+   	y2<-C[,2]#
+    a<-3.035140901#
+	b<-0.002619475#
+	f <- function(x) {1-exp(-b*x^a)/(1-exp(-b*20^a))}	#
+	x0 <-seq(0,20,by=0.01)#
+	y0<-f(x0)#
+#
+output$bandwidth#
+#
+#pdf("SMLE.pdf")#
+	plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")#
+#dev.off()#
+#
+#pdf("MSE.pdf")#
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")#
+#dev.off()
+plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")
+plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")
+library(Rcpp)#
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_df_choice.cpp")#
+	output <- Compute_bandwidth(A)#
+	B <- output$SMLE#
+	C <- output$MSE#
+   	x1<-B[,1]#
+   	y1<-B[,2]#
+   	x2<-C[,1]#
+   	y2<-C[,2]#
+    a<-3.035140901#
+	b<-0.002619475#
+	f <- function(x) {1-exp(-b*x^a)/(1-exp(-b*20^a))}	#
+	x0 <-seq(0,20,by=0.01)#
+	y0<-f(x0)#
+#
+output$bandwidth#
+#
+pdf("SMLE.pdf")#
+	plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")#
+dev.off()#
+#
+pdf("MSE.pdf")#
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")#
 dev.off()
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_density.cpp")#
-output <- ComputeIntervals_density(A)#
-B <- output$CI_density#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-#
-pdf("CI_density.pdf")#
-plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_df_choice.cpp")
 library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_SMLE.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+	A<-read.table("inputdata_Wuhan.txt") #
+	sourceCpp("bandwidth_df_choice.cpp")#
+	output <- Compute_bandwidth(A)#
+	B <- output$SMLE#
+	C <- output$MSE#
+   	x1<-B[,1]#
+   	y1<-B[,2]#
+   	x2<-C[,1]#
+   	y2<-C[,2]#
+    a<-3.035140901#
+	b<-0.002619475#
+	f <- function(x) {1-exp(-b*x^a)/(1-exp(-b*20^a))}	#
+	x0 <-seq(0,20,by=0.01)#
+	y0<-f(x0)#
 #
-pdf("CI_SMLE.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_Sen_Xu.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+output$bandwidth#
 #
-pdf("CI_Sen_Xu.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_SMLE.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
+pdf("SMLE.pdf")#
+	plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y0,y1)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x1,y1,lwd=2,col="blue")#
+	lines(x0,y0,lwd=2,lty=2,col="red")#
+dev.off()#
 #
-pdf("CI_SMLE.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_density.cpp")#
-output <- ComputeIntervals_density(A)#
-B <- output$CI_density#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-#
-pdf("CI_density.pdf")#
-plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_SMLE.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-#
-pdf("CI_SMLE.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_density.cpp")#
-output <- ComputeIntervals_density(A)#
-B <- output$CI_density#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-#
-pdf("CI_density.pdf")#
-plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-C<-read.table("MLE.txt")#
-   	D<-read.table("CI_SMLE.txt")#
-   	E<-read.table("SMLE.txt")#
- 	a<-3.035140901#
-   	b<-0.002619475#
-   	f <- function(x) {(1-exp(-b*x^a))/(1-exp(-b*20^a))}#
-   	#f <- function(x) {x/20}#
-   	x1<-C[,1]#
-   	y1<-C[,2]#
-   	x2<-D[,1]#
-   	y2<-D[,3]#
-   	y3<-D[,4]#
-   	z1<-E[,1]#
-   	z2<-E[,2]#
-   	x0 <-seq(0,15,by=0.01)#
-   	y0<-f(x0)#
-   	plot(c(-10000,-10000),xlim=c(0,15), ylim=c(0.0,max(y3)), main= "", ylab="",xlab="days",bty="n",las=1)#
-#
-	#lines(x1, y1,lty=1,lwd=2,col="blue",type='s')#
-	lines(z1,z2,lwd=2,col="blue")#
-	lines(x0,y0,lwd=3,lty=2,col="red")#
-	segments(x2,y2,x2,y3,lwd=1)#
-   	#segments(x2,t1,x2,t1)#
-   	#segments(x2,u1,x2,u1)
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_SMLE.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-#
-pdf("CI_SMLE.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-output$CI_df
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="red")#
-segments(x1,y2,x1,y3)
-plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="red")#
-segments(x1,y2,x1,y3)
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_SMLE.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-#
-plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="red")#
-segments(x1,y2,x1,y3)
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_SMLE.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-#
-pdf("CI_SMLE.pdf")#
-plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="red")#
-segments(x1,y2,x1,y3)#
+pdf("MSE.pdf")#
+	plot(c(-100,-100),xlim=c(min(x2),max(x2)), ylim=c(min(y2),max(y2)), main= "",ylab="",xlab="",bty="n",las=1)#
+	lines(x2,y2,lwd=2,col="blue")#
 dev.off()
 library(Rcpp)#
 A<-read.table("data_Wuhan.txt") #
@@ -393,122 +971,6 @@ segments(x1,y2,x1,y3)#
 dev.off()
 library(Rcpp)#
 A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_density.cpp")#
-output <- ComputeIntervals_density(A)#
-B <- output$CI_density#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-#
-pdf("CI_density.pdf")#
-plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-B<-read.table("CI_dens.txt")#
-   		x1<-B[,1]#
-   		y1<-B[,2]#
-   		y2<-B[,3]#
-   		y3<-B[,4]#
-   		a<-3.035140901#
-	   	b<-0.002619475#
-	   	f <- function(x) {a*b*exp(-b*x^a)*x^(-1+a)/(1-exp(-b*20^a))}	#
-	   	x0 <-seq(0,20,by=0.01)#
-	   	y0<-f(x0)#
-#
-		plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main="",ylab="",xlab="",bty="n",las=1)#
-		lines(x1,y1,lwd=2,col="red")#
-		lines(x0,y0,lwd=2,lty=2,col="red") #
-		segments(x1,y2,x1,y3)
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_density.cpp")#
-output <- ComputeIntervals_density(A)#
-B <- output$CI_density#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-    a<-3.035140901#
-	b<-0.002619475#
-	f <- function(x) {a*b*exp(-b*x^a)*x^(-1+a)/(1-exp(-b*20^a))}	#
-	x0 <-seq(0,20,by=0.01)#
-	y0<-f(x0)#
-pdf("CI_density.pdf")#
-plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="blue")#
-lines(x1,y1,lwd=2,lty=2,col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_density1.cpp")#
-output <- ComputeIntervals_density(A)#
-B <- output$CI_density#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-    a<-3.035140901#
-	b<-0.002619475#
-	f <- function(x) {a*b*exp(-b*x^a)*x^(-1+a)/(1-exp(-b*20^a))}	#
-	x0 <-seq(0,20,by=0.01)#
-	y0<-f(x0)#
-pdf("CI_density.pdf")#
-plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="blue")#
-lines(x1,y1,lwd=2,lty=2,col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-pdf("CI_density.pdf")#
-plot(c(-100,-100),xlim=c(0,20), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="blue")#
-lines(x0,y0,lwd=2,lty=2,col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_density1.cpp")#
-output <- ComputeIntervals_density(A)#
-B <- output$CI_density#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-    a<-3.035140901#
-	b<-0.002619475#
-	f <- function(x) {a*b*exp(-b*x^a)*x^(-1+a)/(1-exp(-b*20^a))}	#
-	x0 <-seq(0,15,by=0.01)#
-	y0<-f(x0)#
-pdf("CI_density.pdf")#
-plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="blue")#
-lines(x0,y0,lwd=2,lty=2,col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_density.cpp")#
-output <- ComputeIntervals_density(A)#
-B <- output$CI_density#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-    a<-3.035140901#
-	b<-0.002619475#
-	f <- function(x) {a*b*exp(-b*x^a)*x^(-1+a)/(1-exp(-b*20^a))}	#
-	x0 <-seq(0,15,by=0.01)#
-	y0<-f(x0)#
-pdf("CI_density.pdf")#
-plot(c(-100,-100),xlim=c(0,15), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,col="blue")#
-lines(x0,y0,lwd=2,lty=2,col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
 sourceCpp("bootstrap_SMLE.cpp")#
 output <- ComputeIntervals_df(A)#
 B <- output$CI_df#
@@ -518,22 +980,7 @@ B <- output$CI_df#
    y3<-B[,4]#
 #
 pdf("CI_SMLE.pdf")#
-plot(c(-100,-100),xlim=c(0,20), ylim=c(0,1), main= "",ylab="",xlab="",bty="n",las=1)#
+plot(c(-100,-100),xlim=c(0,15), ylim=c(0,1), main= "",ylab="",xlab="",bty="n",las=1)#
 lines(x1,y1,lwd=2,col="red")#
-segments(x1,y2,x1,y3)#
-dev.off()
-library(Rcpp)#
-A<-read.table("data_Wuhan.txt") #
-sourceCpp("bootstrap_Sen_Xu.cpp")#
-output <- ComputeIntervals_df(A)#
-B <- output$CI_df#
-   x1<-B[,1]#
-   y1<-B[,2]#
-   y2<-B[,3]#
-   y3<-B[,4]#
-#
-pdf("CI_Sen_Xu.pdf")#
-plot(c(-100,-100),xlim=c(0,12), ylim=c(0,max(y3)), main= "",ylab="",xlab="",bty="n",las=1)#
-lines(x1,y1,lwd=2,type ="s",col="red")#
 segments(x1,y2,x1,y3)#
 dev.off()
