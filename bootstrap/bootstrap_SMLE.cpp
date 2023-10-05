@@ -76,7 +76,7 @@ double data_smooth(int m, double M1, double tt[], double pp[], double h);
 List ComputeIntervals_df(DataFrame input)
 {
     int     i,m,m_bootstrap,n,ngrid,NumIt,iter,percentile1,percentile2,seed;
-    double  **data,**bootstrap_data,*data3,*tt,*pp,*F,h,h0;
+    double  **data,**bootstrap_data,*data_exit,*tt,*pp,*F,h,h0;
     double  *SMLE,*SMLE1,*F_bootstrap,*SMLE_bootstrap,*pp_bootstrap,*tt_bootstrap;
     double  M1,*grid,*lowbound,*upbound,**f3,*f4;
     
@@ -97,8 +97,8 @@ List ComputeIntervals_df(DataFrame input)
     seed=1;
     
     //h= 0.5*M1*pow(n,-1.0/5);
-    h=6.216281;
-    h0 = 0.8*M1*pow(n,-1.0/9);
+    h   = 6.216281;
+    h0  = 0.8*M1*pow(n,-1.0/9);
     
     percentile1=round(0.025*NumIt);
     percentile2=round(0.975*NumIt);
@@ -111,14 +111,14 @@ List ComputeIntervals_df(DataFrame input)
     for (i=0;i<n;i++)
       bootstrap_data[i]= new double[2];
     
-    // data3 is exposure time
-    data3 = new double[n];
+    // data_exit is exposure time
+    data_exit = new double[n];
     
     for (i=0;i<n;i++)
     {
         data[i][0]=(double)data01[i];
         data[i][1]=(double)data02[i];
-        data3[i]=data[i][1]-data[i][0];
+        data_exit[i]=data[i][1]-data[i][0];
     }
     
     ngrid = 100;
@@ -166,7 +166,7 @@ List ComputeIntervals_df(DataFrame input)
     for (iter=0;iter<NumIt;iter++)
     {
         seed++;
-        data_bootstrap(n,m,M1,data3,bootstrap_data,tt,pp,h0,seed);
+        data_bootstrap(n,m,M1,data_exit,bootstrap_data,tt,pp,h0,seed);
         m_bootstrap = compute_mle(n,bootstrap_data,F_bootstrap,tt_bootstrap,pp_bootstrap);
                                   
         for (i=0;i<=ngrid;i++)
@@ -232,7 +232,7 @@ List ComputeIntervals_df(DataFrame input)
     
     delete[] f4; delete[] lowbound; delete[] upbound;
     
-    delete[] F; delete[] data3;
+    delete[] F; delete[] data_exit;
     delete[] tt; delete[] pp; delete[] tt_bootstrap; delete[] pp_bootstrap;
     delete[] grid; delete[] F_bootstrap; delete[] SMLE; delete[] SMLE_bootstrap;
     delete[] SMLE1;
