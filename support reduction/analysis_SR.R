@@ -1,11 +1,21 @@
 	library(Rcpp)
 	sourceCpp("NPMLE_SR.cpp")
 	
+	#95% confidence intervals for 1000 samples of 1000 observations
 	output <- CI_NPMLE()
 	
+	# the MLE for the last sample
 	B <- output$MLE
+	
+	# the 95% confidennce intervals for the last sample
 	C <- output$CI_MLE
+	
+	# coverages of the 1000 confidence intervals
 	D <- output$percentages
+	
+	# the first column of E gives variances over the 1000 samples
+	# the second column gives the diagonals of the inverse Fisher
+	# information matrix:
 	E <- output$Variances
 	
 	y1<-C[,1]
