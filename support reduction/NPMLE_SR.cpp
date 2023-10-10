@@ -3,7 +3,7 @@
 //  the distribution of the incubation time. Confidence intervals
 //
 //  Created by Piet Groeneboom on 20/09/2023.
-//  Copyright (c) 2020 Piet Groeneboom. All rights reserved.
+//  Copyright (c) 2023 Piet Groeneboom. All rights reserved.
 
 
 #include <iostream>
