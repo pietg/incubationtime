@@ -26,6 +26,6 @@ The first moment is estimated by the mean of the nonparametric MLE (no smoothing
 
 The directory "bootstrap" contains R scripts for the construction of bootstrap 95% confidence intervals for the distribution function and density of the Wuhan data. They are all derived from the nonparametric MLE. The smoothed bootstrap is used; the ordinary bootstrap is inconsistent for the MLE in this case.
 
-The directory "support reduction" will contain scripts, reproducing the pictures of the paper single_double_int_censoring.pdf (https://arxiv.org/abs/2310.04225). Preently it contains the R script reproducing Figure 5.
+The directory "support reduction" will contain scripts, reproducing the pictures of the paper single_double_int_censoring.pdf (https://arxiv.org/abs/2310.04225). Presently it contains the R script reproducing Figure 5.
 
 
