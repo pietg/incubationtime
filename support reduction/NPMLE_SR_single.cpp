@@ -298,6 +298,7 @@ List CI_NPMLE()
     
     delete[] pp; delete[] tt; delete[] grid; delete[] F;  delete[] MLE;
     delete[] data_incub; delete[] exit_time;
+    delete[] Weibull_array;
     delete[] sigma; delete[] mean_diag; delete[] P;
     delete[] lowbound; delete[] upbound; delete[] percentage;
     delete[] ind; delete[] ind2;

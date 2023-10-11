@@ -1,5 +1,5 @@
 	library(Rcpp)
-	sourceCpp("NPMLE_SR.cpp")
+	sourceCpp("NPMLE_SR_double.cpp")
 	
 	#95% confidence intervals for 1000 samples of 1000 observations
 	output <- CI_NPMLE()
@@ -27,7 +27,6 @@
 	y5<-C[,5]
 	
 	plot(c(-10000,-10000),xlim=c(0,15), ylim=c(0.0,max(y3)), main= "", ylab="",xlab="",bty="n",las=1)
-	
 	points(y1,y2,col="red",pch = 20, cex = 1.5)
 	points(y1,y3,col="black",pch = 20, cex = 1.5)
 	segments(y1,y4,y1,y5,lwd=2)

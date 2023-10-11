@@ -1,6 +1,8 @@
 # Confidence intervals
 
-The R script analysis_SR.R produces Figure 5 in single_double_int_censoring.pdf which gives confidence intervals and coverages of 1000 samples of size 1000 for the single interval censoring model. If one runs the script, one will see the numbers of the samples drawn and at the end two picures, one of the confidence interval for the last sample and one for the confidence intervals for the 1000 samples at the points (number of days) 3 to 9.
+The R script analysis_SR_single.R produces Figure 5 in single_double_int_censoring.pdf, which gives confidence intervals and coverages of 1000 samples of size 1000 for the singly interval censoring model. If one runs the script, one will see the numbers of the samples drawn and at the end two pictures, one of the confidence interval for the last sample and one for the confidence intervals for the 1000 samples.
+
+The R script analysis_SR_doubly.R produces a figure analagous to Figure 7 in single_double_int_censoring.pdf, which gives confidence intervals and coverages of 1000 samples of size 1000 for the doubly interval censoring model. In this case the means of the diagonals of the Fisher information matrices over 1000 samples were used as estimates of the variances, to illustrate the validity of the asymptotic theory. In the manuscript 1000 bootstrap samples were used for this purpose.
 
 All the confidece intervals of the paper were constructed by a version of the present support reduction algorithm.
 
