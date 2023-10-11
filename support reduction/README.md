@@ -4,6 +4,6 @@ The R script analysis_SR_single.R produces Figure 5 in single_double_int_censori
 
 The R script analysis_SR_doubly.R produces a figure analagous to Figure 7 in single_double_int_censoring.pdf, which gives confidence intervals and coverages of 1000 samples of size 1000 for the doubly interval censoring model. In this case the means of the diagonals of the Fisher information matrices over 1000 samples were used as estimates of the variances, to illustrate the validity of the asymptotic theory. In the manuscript 1000 bootstrap samples were used for this purpose.
 
-All the confidece intervals of the paper were constructed by a version of the present support reduction algorithm. The manuscript can be found n arXiv: https://arxiv.org/abs/2310.04225
+All the confidece intervals of the paper were constructed by a version of the present support reduction algorithm. The manuscript can also be found on arXiv: https://arxiv.org/abs/2310.04225
 
 
