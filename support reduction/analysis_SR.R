@@ -13,9 +13,11 @@
 	# coverages of the 1000 confidence intervals
 	D <- output$percentages
 	
-	# the first column of E gives variances over the 1000 samples
+	# the first column of E gives n times the variances over 
+	#	the 1000 samples
 	# the second column gives the diagonals of the inverse Fisher
-	# information matrix:
+	# 	information matrix:
+	
 	E <- output$Variances
 	
 	y1<-C[,1]
