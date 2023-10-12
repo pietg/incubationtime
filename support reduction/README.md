@@ -6,4 +6,6 @@ The R script analysis_SR_doubly.R produces a figure analagous to Figure 7 in sin
 
 All the confidece intervals of the paper were constructed by a version of the present support reduction algorithm. The manuscript can also be found on arXiv: https://arxiv.org/abs/2310.04225
 
+For instructions on how to use the R package Rcpp on Mac, Windows or Linux, see, e.g., https://teuder.github.io/rcpp4everyone_en/020_install.html.
+
 
