@@ -32,7 +32,7 @@ typedef struct
 }
 data_object;
 
-void   data_exp_double(int n, double M1, double M2, double **data, double data_incub[], double exit_time[], int seed);
+void   data_exp_double(int n, int ngrid0, double **data, double cum_Weibull[], int seed);
 void    IterationLoop_IQM(int *m1, int *indexmin1, int *iteration1, double *minimum1, int ndata,
  int ngrid, int ind[], double pp[], double pp0[], double **data, double g[], double tt[],
   double grid[], double w[]);
@@ -61,7 +61,7 @@ void Compute_pp_IQM(int m, int ndata, double pp[], double **data, double tt[], d
 void MLE_IQM(int ndata, int *m1, int ind[], int ngrid, double **data, double tt[],double grid[], double pp[], double MLE[], double **W, double *phi_IQM, int *NumIt);
 
 void Compute_covar(int ngrid, int NumIt, double **Fvalue, double **covar);
-void compute_sigma(int m, int ngrid0, double **Fisher_matrix, int *P, double **S, double **IS, int **A, double **B, double **B1, double *MLE, double *F, int *ind2, double *tt, double *grid, double *sigma);
+void compute_sigma(int m, int ngrid, double **Fisher_matrix, double *MLE, double *F, double *tt, double *grid, double *sigma);
 void MLE_to_F(int m, int ngrid0, double grid[], double tt[], double MLE[], double F[]);
 int compare(const void *a, const void *b);
 void sort_index(int m, int ind[], double alpha[], double pp[]);
@@ -75,88 +75,88 @@ void  LUPSolve(double **A, int *P, double *b, int N, double *x);
 
 List CI_NPMLE()
 {
-    int     i,j,n,m,n_Weibull,ngrid,ngrid0,*ind,*ind2,**A,*P;
-    int     *percentage,nvar,iterations,iter,NumIt,seed;
-    double  *tt,*pp,*F,*Weibull_array;
-    double  **data,*data_incub,*exit_time;
-    double  phi_IQM,**S,**IS,*var_array;
+    int     i,n,m,ngrid,ngrid0,*ind;
+    int     *percentage,iterations,iter,NumIt,seed;
+    double  *tt,*pp,*F;
+    double  **data;
+    double  phi_IQM,*var_array;
     double  *grid,**Fisher_matrix;
-    double  *sigma,**B,**B1,**F_value,**covar;
+    double  *sigma,**F_value,**covar;
     double  *MLE,*mean_diag,**diag_Fisher;
+    double  *Weibull_array,*cumulative_Weibull;
     double  *lowbound,*upbound;
-    double  M1,M2;
     
     // determine the sample size
     
     n=1000;
     NumIt = 1000;
-    M1=M2=15;
     
     seed=1;
     
-    ngrid0=15;
-    ngrid=30;
+    ngrid0=16;
+    ngrid=34;
     
     lowbound = new double[ngrid0+1];
     upbound  = new double[ngrid0+1];
     percentage = new int[ngrid0+1];
     
+    for (i=0;i<=ngrid0;i++)
+      percentage[i]=0;
+    
     ind = new int[ngrid+1];
-    ind2 = new int[ngrid+1];
     
     data = new double *[n];
     for (i=0;i<n;i++)
         data[i]= new double[3];
     
-    nvar= ngrid0;
-    var_array = new double[nvar+1];
+    var_array = new double[ngrid+1];
     
     // means of diagonals inverse Fisher matrix
-    
     var_array[0]=0;
-    var_array[1]=0.1320540212;
-    var_array[2]=0.3781653153;
-    var_array[3]=1.0621834937;
-    var_array[4]=2.0475486250;
-    var_array[5]=2.9293754354;
-    var_array[6]=3.2044083501;
-    var_array[7]=2.6291266347;
-    var_array[8]=1.6471573415;
-    var_array[9]=0.8178562980;
-    var_array[10]=0.3219000165;
-    var_array[11]=0.0905053999;
-    var_array[12]=0.0300027372;
-    var_array[13]=0.0119196388;
-    var_array[14]=0.0023666879;
-    var_array[15]=1;
+    var_array[1]=0.2980044352;
+    var_array[2]=0.2972111370;
+    var_array[3]=0.3889178792;
+    var_array[4]= 1.0493557668;
+    var_array[5]=2.0455598422;
+    var_array[6]=3.0001495297;
+    var_array[7]=3.2479146132;
+    var_array[8]=2.6016648955;
+    var_array[9]=1.6304075616;
+    var_array[10]=0.7956524055;
+    var_array[11]= 0.3148103904;
+    var_array[12]=0.1046048985;
+    var_array[13]=0.0360410435;
+    var_array[14]=0.0076358554;
+    var_array[15]=0.0012257086;
     
-    data_incub  = new double[2*n+1];
-    exit_time   = new double[2*n+1];
-    
-    for (i=0;i<=ngrid0;i++)
-      percentage[i]=0;
-    
-    n_Weibull= ngrid0;
-    Weibull_array = new double[n_Weibull+1];
+    Weibull_array = new double[ngrid+1];
+    cumulative_Weibull = new double[ngrid+1];
     
     // integrals over intervals f length 1
     
-    Weibull_array[0]=0.00064872;
-    Weibull_array[1]=0.00992978;
-    Weibull_array[2]=0.0429498;
-    Weibull_array[3]=0.112548;
-    Weibull_array[4]=0.224047;
-    Weibull_array[5]=0.371218;
-    Weibull_array[6]=0.535908;
-    Weibull_array[7]=0.693386;
-    Weibull_array[8]=0.821808;
-    Weibull_array[9]=0.910489;
-    Weibull_array[10]=0.96182;
-    Weibull_array[11]=0.98643;
-    Weibull_array[12]=0.996074;
-    Weibull_array[13]=0.99912;
-    Weibull_array[14]=0.999884;
-    Weibull_array[15]=1;
+    Weibull_array[0]=0;
+    Weibull_array[1]=0.00064872;
+    Weibull_array[2]=0.00992978;
+    Weibull_array[3]=0.0429498;
+    Weibull_array[4]=0.112548;
+    Weibull_array[5]=0.224047;
+    Weibull_array[6]=0.371218;
+    Weibull_array[7]=0.535908;
+    Weibull_array[8]=0.693386;
+    Weibull_array[9]=0.821808;
+    Weibull_array[10]=0.910489;
+    Weibull_array[11]=0.96182;
+    Weibull_array[12]=0.98643;
+    Weibull_array[13]=0.996074;
+    Weibull_array[14]=0.99912;
+    Weibull_array[15]=0.999884;
+    
+    for (i=16;i<ngrid+1;i++)
+      Weibull_array[i]=1;
+    
+    cumulative_Weibull[0]=0;
+    for (i=1;i<ngrid+1;i++)
+      cumulative_Weibull[i]=cumulative_Weibull[i-1]+Weibull_array[i];
 
     F =  new double[ngrid+1];
     MLE = new double[ngrid+1];
@@ -176,41 +176,7 @@ List CI_NPMLE()
     for (i=0;i<=ngrid;i++)
         grid[i] = (double)i;
     
-    S = new double *[ngrid+1];
-       for (i=0;i<ngrid+1;i++)
-           S[i] = new double [ngrid+1];
-    
-    IS = new double *[ngrid+1];
-           for (i=0;i<ngrid+1;i++)
-               IS[i] = new double [ngrid+1];
-    
-    sigma = new double [ngrid0+1];
-    
-    A = new int *[ngrid+1];
-       for (i=0;i<ngrid+1;i++)
-           A[i] = new int [ngrid+1];
-    
-    B = new double *[ngrid+1];
-       for (i=0;i<ngrid+1;i++)
-           B[i] = new double [ngrid+1];
-    
-    B1 = new double *[ngrid+1];
-       for (i=0;i<ngrid+1;i++)
-           B1[i] = new double [ngrid+1];
-    
-    for (i=0;i<ngrid0;i++)
-    {
-        for (j=0;j<ngrid0;j++)
-        {
-            if (j<=i)
-                A[i][j]=1;
-            else
-                A[i][j]=0;
-        }
-    }
-
-    
-    P = new int[ngrid+1];
+    sigma = new double [ngrid+1];
         
     Fisher_matrix = new double *[ngrid+1];
     for (i=0;i<ngrid+1;i++)
@@ -235,10 +201,11 @@ List CI_NPMLE()
     {
         seed++;
         
-        data_exp_double(n,M1,M2,data,data_incub,exit_time,seed);
+        data_exp_double(n,ngrid0,data,cumulative_Weibull,seed);
         
         MLE_IQM(n,&m,ind,ngrid,data,tt,grid,pp,MLE,Fisher_matrix,&phi_IQM,&iterations);
-        compute_sigma(m,ngrid0,Fisher_matrix,P,S,IS,A,B,B1,MLE,F,ind2,tt,grid,sigma);
+        
+        compute_sigma(m,ngrid,Fisher_matrix,MLE,F,tt,grid,sigma);
         
         for (i=1;i<ngrid0;i++)
             F_value[iter][i]=F[i];
@@ -249,15 +216,24 @@ List CI_NPMLE()
             upbound[i]=F[i]+1.96*sqrt(var_array[i])/sqrt(n);
             
             diag_Fisher[iter][i]=SQR(sigma[i]);
-            
+    
             if (Weibull_array[i]<lowbound[i] || Weibull_array[i]>upbound[i])
-                percentage[i]++;
+                    percentage[i]++;
         }
         
         Rcout << iter+1<< endl;
     }
     
     for (i=1;i<ngrid0;i++)
+      mean_diag[i] = 0;
+    
+    for (iter=0;iter<NumIt;iter++)
+    {
+        for (i=1;i<ngrid0;i++)
+            mean_diag[i] += diag_Fisher[iter][i];
+    }
+    
+    for (i=1;i<ngrid;i++)
       mean_diag[i] = 0;
     
     for (iter=0;iter<NumIt;iter++)
@@ -279,23 +255,23 @@ List CI_NPMLE()
         out1(i,1)=MLE[i+1];
     }
     
-    NumericMatrix out2 = NumericMatrix(ngrid0-1,5);
+    NumericMatrix out2 = NumericMatrix(8,5);
      
-    for (i=0;i<ngrid0-1;i++)
+    for (i=0;i<=7;i++)
     {
-        lowbound[i]=F[i+1]-1.96*sigma[i+1]/sqrt(n);
-        upbound[i]=F[i+1]+1.96*sigma[i+1]/sqrt(n);
+        lowbound[i]=F[i+3]-1.96*sigma[i+3]/sqrt(n);
+        upbound[i]=F[i+3]+1.96*sigma[i+3]/sqrt(n);
 
-        out2(i,0)=grid[i+1];
-        out2(i,1)=Weibull_array[i+1];
-        out2(i,2)=F[i+1];
-        out2(i,3)=lowbound[i+1];
-        out2(i,4)=upbound[i+1];
+        out2(i,0)=grid[i+3];
+        out2(i,1)=Weibull_array[i+3];
+        out2(i,2)=F[i+3];
+        out2(i,3)=lowbound[i+3];
+        out2(i,4)=upbound[i+3];
     }
     
-    NumericMatrix out3 = NumericMatrix(7,2);
+    NumericMatrix out3 = NumericMatrix(8,2);
     
-    for (i=0;i<7;i++)
+    for (i=0;i<=7;i++)
     {
         out3(i,0)=grid[i+3];
         out3(i,1)=1-percentage[i+3]*1.0/NumIt;
@@ -321,30 +297,15 @@ List CI_NPMLE()
     delete[] data;
     
     delete[] pp; delete[] tt; delete[] grid; delete[] F;  delete[] MLE;
-    delete[] data_incub; delete[] exit_time;
-    delete[] Weibull_array; delete[] var_array;
-    delete[] sigma; delete[] mean_diag; delete[] P;
+    delete[] Weibull_array; delete[] cumulative_Weibull;
+    delete[] sigma; delete[] mean_diag;
     delete[] lowbound; delete[] upbound; delete[] percentage;
-    delete[] ind; delete[] ind2;
+    delete[] ind;
     
     for (i=0;i<NumIt+1;i++)
         delete[] F_value[i];
     delete[] F_value;
-    for (i=0;i<ngrid+1;i++)
-        delete[] S[i];
-    delete[] S;
-    for (i=0;i<ngrid+1;i++)
-        delete[] IS[i];
-    delete[] IS;
-    for (i=0;i<ngrid+1;i++)
-        delete[] A[i];
-    delete[] A;
-    for (i=0;i<ngrid+1;i++)
-        delete[] B[i];
-    delete[] B;
-    for (i=0;i<ngrid+1;i++)
-        delete[] B1[i];
-    delete[] B1;
+ 
     for (i=0;i<ngrid+1;i++)
         delete[] Fisher_matrix[i];
     delete[] Fisher_matrix;
@@ -358,31 +319,41 @@ List CI_NPMLE()
     return out;
 }
 
-void   data_exp_double(int n, double M1, double M2, double **data, double data_incub[], double exit_time[], int seed)
+void   data_exp_double(int n, int ngrid0, double **data, double cum_Weibull[], int seed)
 {
-    int    i;
-    double a,b,s,u,v,m;
-    
-    a=3.035140901;
-    b=0.002619475;
+    int    i,j,m;
+    double s,v;
     
     std::mt19937_64 gen(seed);
     std::uniform_real_distribution<double> dis_unif(0,1);
     std::uniform_int_distribution<int> dis_int(0,3);
-    std::uniform_int_distribution<int> dis1(1,M2);
+    std::uniform_int_distribution<int> dis1(1,ngrid0-1);
     
+    s=0;
     for (i=0;i<n;i++)
     {
         m=dis1(gen);
-        exit_time[i]=m;
         v = dis_unif(gen)*m;
         
-        u = dis_unif(gen);
-        data_incub[i] = Weibull_inv(a,b,M1,u);
-        s = v+data_incub[i];
+        for (j=1;j<=ngrid0+m;j++)
+        {
+            if (j-m<=0)
+            {
+                if (cum_Weibull[j-1]<v && v<=cum_Weibull[j])
+                    s = (double)(j);
+            }
+            else
+            {
+                if (j-m>0)
+                {
+                    if (cum_Weibull[j-1]-cum_Weibull[j-1-m]< v && v<=cum_Weibull[j]-cum_Weibull[j-m])
+                        s = (double)(j);
+                }
+            }
+        }
         
-        data[i][2] = floor(s+1+dis_int(gen));
-        data[i][1] = fmax(0,floor(s-dis_int(gen)));
+        data[i][2] = s+1+dis_int(gen);
+        data[i][1] = fmax(0,s-dis_int(gen));
         data[i][0] = m;
     }
 }
@@ -940,9 +911,6 @@ void MLE_IQM(int ndata, int *m1, int ind[], int ngrid, double **data, double tt[
     Compute_nabla(ngrid,ndata,data,grid,g1,nabla1);
     Compute_nabla(ngrid,ndata,data,grid,g,nabla2);
     
-    //for (i=1;i<=ndata;i++)
-    //printf("%15.10f\n",g1[i]);
-    
     phi_new=phi_crit(ngrid,ndata,pp1,g1);
     
     min_nabla=0;
@@ -1113,14 +1081,48 @@ void Compute_covar(int ngrid, int NumIt, double **Fvalue, double **covar)
       covar[i][j]/=NumIt;
     }
   }
+  delete[] mean;
 }
 
-void compute_sigma(int m, int ngrid0, double **Fisher_matrix, int *P, double **S, double **IS, int **A, double **B, double **B1, double *MLE, double *F, int *ind2, double *tt, double *grid, double *sigma)
+void compute_sigma(int m, int ngrid, double **Fisher_matrix, double *MLE, double *F, double *tt, double *grid, double *sigma)
 {
-    int i,j,k,m1;
+    int i,j,k,m1,**A,*P;
     double tol=1.0e-10;
+    double **S,**IS,**B,**B1;
     
     m1=m-1;
+    
+    S = new double *[ngrid+1];
+    for (i=0;i<ngrid+1;i++)
+               S[i] = new double [ngrid+1];
+        
+    IS = new double *[ngrid+1];
+    for (i=0;i<ngrid+1;i++)
+                   IS[i] = new double [ngrid+1];
+    A = new int *[ngrid+1];
+        for (i=0;i<ngrid+1;i++)
+            A[i] = new int [ngrid+1];
+    
+    B = new double *[ngrid+1];
+        for (i=0;i<ngrid+1;i++)
+            B[i] = new double [ngrid+1];
+        
+    B1 = new double *[ngrid+1];
+        for (i=0;i<ngrid+1;i++)
+            B1[i] = new double [ngrid+1];
+        
+    for (i=0;i<=ngrid;i++)
+    {
+        for (j=0;j<=i;j++)
+            A[i][j]=1;
+        if (i<ngrid)
+        {
+            for (j=i+1;j<=ngrid;j++)
+                A[i][j]=0;
+        }
+    }
+        
+    P = new int[ngrid+1];
     
     for (i=0;i<m1;i++)
     {
@@ -1152,26 +1154,48 @@ void compute_sigma(int m, int ngrid0, double **Fisher_matrix, int *P, double **S
     }
     
     F[0]=0;
-    for (i=0;i<=ngrid0;i++)
+    for (i=0;i<=ngrid;i++)
     {
+        //if (grid[i]<tt[1])
+            sigma[i]=0;
         for (k=1;k<=m;k++)
         {
             if (tt[k-1]<=grid[i] && grid[i]<tt[k])
             {
                 F[i] = MLE[k-1];
-                ind2[i]=k-1;
                 if (k>1)
                     sigma[i]=sqrt(B[k-2][k-2]);
-                    
             }
         }
         if (grid[i]>=tt[m])
         {
             F[i]=1;
-            ind2[i]=m;
             sigma[i]=0;
         }
     }
+    
+    for (i=0;i<=ngrid;i++)
+    {
+        if (grid[i]<tt[1])
+            sigma[i]=sqrt(B[0][0]);
+    }
+    
+    for (i=0;i<ngrid+1;i++)
+        delete[] A[i];
+    delete[] A;
+    for (i=0;i<ngrid+1;i++)
+        delete[] B[i];
+    delete[] B;
+    for (i=0;i<ngrid+1;i++)
+        delete[] B1[i];
+    delete[] B1;
+    for (i=0;i<ngrid+1;i++)
+        delete[] S[i];
+    delete[] S;
+    for (i=0;i<ngrid+1;i++)
+        delete[] IS[i];
+    delete[] IS;
+    delete[] P;
 }
 
 void MLE_to_F(int m, int ngrid0, double grid[], double tt[], double MLE[], double F[])
