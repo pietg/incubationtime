@@ -6,7 +6,7 @@
 	source("lognormal_nloptr.R")
 
 	NumIt = 1000
-	n = 500
+	n = 100
 	p = 0.95
 	
 # data vectors
@@ -57,7 +57,7 @@ for (iter in 1: NumIt)
 	}
 
 # Compute NPMLE	
-	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)
 	percentile_NPMLE <- output$quantile
 
 # provide options for parametric methods	
