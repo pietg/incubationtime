@@ -102,7 +102,7 @@ List Compute_bandwidth(DataFrame input)
     NumIt = 30;
     
     // number of bootstrap samples in the estimates of the MSE
-    B=10000;
+    B=1000;
     
     // contains the (bootstrap) MSE's for different bandwidths
     MSE =  new double[NumIt];
@@ -173,12 +173,12 @@ List Compute_bandwidth(DataFrame input)
     min=1000;
     h_min = 10;
     
-    Rcout << "30 bandwidths and MSE's from 10,000 bootstrap samples for each bandwidth:" << std::endl << std::endl;
+    Rcout << "30 bandwidths and MSE's from 1000 bootstrap samples for each bandwidth:" << std::endl << std::endl;
             
     for (iter=0;iter<NumIt;iter++)
     {
         seed ++;
-        h[iter] = 3+iter*0.025*M1*pow(n,-1.0/5);
+        h[iter] = 2+iter*0.025*M1*pow(n,-1.0/5);
         
         // MSE is computed via the smooth bootstrap with bootstrap  samples
         // generated from the (oversmoothed) df estimate

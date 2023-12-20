@@ -2475,3 +2475,5151 @@ boxplot(MLEMat,las=1)#
 #abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
 abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")#
 dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+#
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)#
+	#mean_NPMLE <- output$quantile#
+	mean_NPMLE <- output$mean#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	estimates of first moments#
+	mean_Weibull <- b1*gamma(1+1/a1)#
+	mean_lognormal <- exp(a2+0.5*b2^2)#
+	#percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	#percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(mean_NPMLE,file = "mean_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(mean_Weibull,file = "mean_Weibull.txt", ncol =1, append = TRUE)#
+	#write(mean_lognormal,file = "mean_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(mean_NPMLE, mean_Weibull,mean_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_mean.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 5000#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+#
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)#
+	#mean_NPMLE <- output$quantile#
+	mean_NPMLE <- output$mean#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	estimates of first moments#
+	mean_Weibull <- b1*gamma(1+1/a1)#
+	mean_lognormal <- exp(a2+0.5*b2^2)#
+	#percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	#percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(mean_NPMLE,file = "mean_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(mean_Weibull,file = "mean_Weibull.txt", ncol =1, append = TRUE)#
+	#write(mean_lognormal,file = "mean_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(mean_NPMLE, mean_Weibull,mean_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_mean.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 1000#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 20#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+output$SMLE
+output
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+#
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)#
+	#mean_NPMLE <- output$quantile#
+	mean_NPMLE <- output$mean#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	estimates of first moments#
+	mean_Weibull <- b1*gamma(1+1/a1)#
+	mean_lognormal <- exp(a2+0.5*b2^2)#
+	#percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	#percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(mean_NPMLE,file = "mean_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(mean_Weibull,file = "mean_Weibull.txt", ncol =1, append = TRUE)#
+	#write(mean_lognormal,file = "mean_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(mean_NPMLE, mean_Weibull,mean_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_mean.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+output$SMLE
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+output$SMLE
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+a2
+b2
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 1.763329#
+	b2 <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- dlnorm(meanlog = a2, sdlog = b2, log = FALSE)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 1.763329#
+	b2 <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- dlnorm(1,meanlog = a2, sdlog = b2, log = FALSE)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 1.763329#
+	b2 <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a2,scale=b2)#
+  		v <- rlnorm(1, meanlog = 0, sdlog = 1)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 1#
+	b2 <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a2,scale=b2)#
+  		v <- rlnorm(1, meanlog = 0, sdlog = 1)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 1#
+	b2 <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a2,scale=b2)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 1#
+	b2 <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+  		#v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+a1
+b1
+a1
+a2
+b2
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 5.83182#
+	b2 <- 1.45192#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 1.763329#
+	b2 <- 1.45192#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 4.72883#
+	b2 <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 4.72883#
+	b2 <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+  		#v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+a2
+b2
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 0.567203#
+	b2 <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 6#
+	b2 <- 1#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 6#
+	b2 <- 1#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+  		#v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+a2
+b2
+a1
+b1
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 1#
+	b2 <- 0.5#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 1#
+	b2 <- 3#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 6#
+	b2 <- 3#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 0#
+	b2 <- 1#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 6#
+	b2 <- 0.3#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 1#
+	b2 <- 0.3#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 6#
+	b2 <- 0.3#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 6#
+	b2 <- 1#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 6#
+	b2 <- 2#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 6#
+	b2 <- 2#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+  		print(v())#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 6#
+	b2 <- 2#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+  		print(v)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	a2 <- 6#
+	b2 <- 2#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+  		#v <- rlnorm(1, meanlog =a2, sdlog = b2)#
+  		print(v)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+a2
+b2
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+  		#print(v)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 1000#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+  		#print(v)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+  		#print(v)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3.5,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+  		#print(v)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=2.5,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+plnorm(6,meanlog = c, sdlog = d,lower.tail = TRUE, log.p = FALSE)
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=0.5303874,lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+  		#print(v)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=0.5303874,lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+  		#v <- rlnorm(1, meanlog =c, sdlog = d)#
+  		#print(v)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=0.5303874,lwd=2,lty=1,col = "red")#
+dev.off()
+1-exp(-(6/b1)^a1)
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=0.5303874,lwd=2,lty=1,col = "red")#
+abline(h=0.4552552,lwd=2,lty=1,col = "red")#
+dev.off()
+1-exp(-(6/b)^a)
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=0.5303874,lwd=2,lty=1,col = "red")#
+abline(h=0.4526011,lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=0.5303874,lwd=2,lty=1,col = "red")#
+abline(h=0.4526011,lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	SMLE <- output$SMLE#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	values of distribution function#
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)#
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)#
+# if one wants to have the results in a file, "decomment" the following lines#
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)#
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)#
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_SMLE.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=0.5303874,lwd=2,lty=1,col = "red")#
+#abline(h=0.4526011,lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=d*(-log(1-p))^(1/c),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=2,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=4,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=2.5,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 1000#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+#
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)#
+	#mean_NPMLE <- output$quantile#
+	mean_NPMLE <- output$mean#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	estimates of first moments#
+	mean_Weibull <- b1*gamma(1+1/a1)#
+	mean_lognormal <- exp(a2+0.5*b2^2)#
+	#percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	#percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(mean_NPMLE,file = "mean_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(mean_Weibull,file = "mean_Weibull.txt", ncol =1, append = TRUE)#
+	#write(mean_lognormal,file = "mean_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(mean_NPMLE, mean_Weibull,mean_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_mean.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+pdf("BoxPlot_mean.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+#abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+pdf("BoxPlot_mean.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=exp(c+0.5*d^2),lwd=2,lty=1,col = "red")#
+#abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+#
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)#
+	#mean_NPMLE <- output$quantile#
+	mean_NPMLE <- output$mean#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	estimates of first moments#
+	mean_Weibull <- b1*gamma(1+1/a1)#
+	mean_lognormal <- exp(a2+0.5*b2^2)#
+	#percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	#percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(mean_NPMLE,file = "mean_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(mean_Weibull,file = "mean_Weibull.txt", ncol =1, append = TRUE)#
+	#write(mean_lognormal,file = "mean_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(mean_NPMLE, mean_Weibull,mean_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_mean.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=exp(c+0.5*d^2),lwd=2,lty=1,col = "red")#
+#abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("MLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		#v <- rweibull(1,shape=a,scale=b)#
+  		v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+#abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+  		#v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+#abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")#
+dev.off()
+library(Rcpp)#
+	library(pracma)#
+	library(nloptr)#
+	sourceCpp("nonparMLE.cpp")#
+	source("Weibull_nloptr.R")#
+	source("lognormal_nloptr.R")#
+#
+	NumIt = 1000#
+	n = 500#
+	p = 0.95#
+# data vectors#
+	S <- vector("numeric", n)#
+	E <- vector("numeric", n)#
+ #upper bound for exposure time #
+	M <- 30#
+#parameters Weibull distribution#
+	a <- 3.035140901#
+	b <- 7.0897556#
+#parameters log-normal distribution#
+	c <- 1.763329#
+	d <- 0.3728888#
+#
+# input parameters for parametric distributions#
+	x=vector("numeric",2)#
+	alpha=vector("numeric",2)#
+	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)#
+	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)#
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")#
+for (iter in 1: NumIt)#
+{#
+  	sim = iter#
+  	print(iter)#
+	set.seed(sim)#
+#
+	E <- runif(n,1,M)#
+# generate data#
+	for (i in 1: n)#
+	{ 	#
+		y <- runif(1,0,E[i])#
+		#u <- runif(1,0,1)#
+  		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)#
+  		v <- rweibull(1,shape=a,scale=b)#
+  		#v <- rlnorm(1, meanlog =c, sdlog = d)#
+		S[i] <- y+v#
+		data[i,1] <- max(0,S[i]-E[i])#
+		data[i,2] <- S[i]#
+	}#
+#
+# Compute NPMLE	#
+	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)#
+	percentile_NPMLE <- output$quantile#
+#
+# provide options for parametric methods	#
+	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, #
+					"maxeval"= 10000, "tol_constraints_ineq" = rep(1.0e-10,2))#
+#
+# x0 is initial value for Weibull fitting#
+	x0 <- c(3,7)#
+# x1 is initial value for Log-normal fitting#
+	x1 <- c(1,0.5)#
+#
+# res1 is result for Weibull fitting	#
+	res1 <- nloptr(x0 = x0, eval_f = eval_f0,lb = lb0, ub = ub0, eval_g_ineq = eval_g_ineq0, opts = opts,data = data)#
+#
+# res2 is result for Log-normal fitting        				#
+    res2 <- nloptr(x0 = x1, eval_f = eval_f1,lb = lb1, ub = ub1, eval_g_ineq = eval_g_ineq1, opts = opts,data = data)#
+ # parameter estimates for Weibull       #
+    a1 <- res1$solution[1]#
+    b1 <- res1$solution[2]#
+#
+ # parameter estimates for log-normal     #
+    a2 <- res2$solution[1]#
+    b2 <- res2$solution[2]#
+ #	medians#
+	percentile_Weibull <- b1*(-log(1-p))^(1/a1)#
+	percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))#
+#
+# if one wants to have the results in a file, "decomment" the following lines#
+	#write(percentile_NPMLE,file = "median_MPMLE.txt", ncol =1, append = TRUE)#
+	#write(percentile_Weibull,file = "median_Weibull.txt", ncol =1, append = TRUE)#
+	#write(percentile_lognormal,file = "median_lognormal.txt", ncol =1, append = TRUE)#
+#
+#make matrix for box plot	#
+	MLEMat[iter,] = c(percentile_NPMLE,percentile_Weibull,percentile_lognormal)#
+#
+}#
+#
+pdf("BoxPlot_95th_percentile.pdf")#
+boxplot(MLEMat,las=1)#
+abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")#
+#abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")#
+dev.off()

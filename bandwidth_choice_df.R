@@ -1,5 +1,7 @@
 	library(Rcpp)
-	A<-read.table("inputdata_Wuhan.txt") 
+	#A<-read.table("inputdata_Wuhan.txt")
+	#A<-read.table("data.txt")
+	A<-read.table("data_lognormal.txt") 
 	sourceCpp("bandwidth_df_choice.cpp")
 	
 	output <- Compute_bandwidth(A)

@@ -69,6 +69,7 @@ void cumsum(int n1, double yy[], double cumw[], double cs[], double grad[], doub
 void convexminorant(int n1, double cumw[], double cs[], double yy[]);
 void isoreg(int n1, int **N, int **ind_second, int *index_end, double F[]);
 void data_bootstrap(int n, int m, double M1, double data_exit[], double **bootstrap_data,double tt[], double pp[], double h, int seed);
+void data_bootstrap(int n, double **data, double **bootstrap_data, int seed);
 double data_smooth(int m, double M1, double tt[], double pp[], double h);
 
 // [[Rcpp::export]]
@@ -97,8 +98,10 @@ List ComputeIntervals_df(DataFrame input)
     seed=1;
     
     //h= 0.5*M1*pow(n,-1.0/5);
-    h   = 6.216281;
-    h0  = 0.8*M1*pow(n,-1.0/9);
+    h=3;
+    //h   = 6.216281;
+    //h0  = 0.8*M1*pow(n,-1.0/9);
+    h0=8;
     
     percentile1=round(0.025*NumIt);
     percentile2=round(0.975*NumIt);
@@ -166,6 +169,7 @@ List ComputeIntervals_df(DataFrame input)
     for (iter=0;iter<NumIt;iter++)
     {
         seed++;
+        //data_bootstrap(n,data,bootstrap_data,seed);
         data_bootstrap(n,m,M1,data_exit,bootstrap_data,tt,pp,h0,seed);
         m_bootstrap = compute_mle(n,bootstrap_data,F_bootstrap,tt_bootstrap,pp_bootstrap);
                                   
@@ -868,6 +872,21 @@ double KK(double x)
   }
   
   return y;
+}
+
+void data_bootstrap(int n, double **data, double **bootstrap_data, int seed)
+{
+    int    i,j;
+    
+    std::mt19937_64 gen(seed);
+    std::uniform_int_distribution<int> dis(0,n-1);
+    
+    for (i=0;i<n;i++)
+    {
+        j=dis(gen);
+        bootstrap_data[i][0]=data[j][0];
+        bootstrap_data[i][1]=data[j][1];
+    }
 }
 
 void data_bootstrap(int n, int m, double M1, double data_exit[], double **bootstrap_data,double tt[], double pp[], double h, int seed)

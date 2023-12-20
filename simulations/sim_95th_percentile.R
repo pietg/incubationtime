@@ -6,7 +6,7 @@
 	source("lognormal_nloptr.R")
 
 	NumIt = 1000
-	n = 1000
+	n = 500
 	p = 0.95
 	
 # data vectors
@@ -19,6 +19,10 @@
 #parameters Weibull distribution
 	a <- 3.035140901
 	b <- 7.0897556
+	
+#parameters log-normal distribution
+	c <- 1.763329
+	d <- 0.3728888
 
 # input parameters for parametric distributions
 	x=vector("numeric",2)
@@ -26,7 +30,7 @@
   
 	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)
 	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)
-	colnames(MLEMat) <- c("MLE","Weibull","log-normal")
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")
 
 
 for (iter in 1: NumIt)
@@ -46,6 +50,7 @@ for (iter in 1: NumIt)
 		#u <- runif(1,0,1)
   		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)
   		v <- rweibull(1,shape=a,scale=b)
+  		#v <- rlnorm(1, meanlog =c, sdlog = d)
 		S[i] <- y+v
 		data[i,1] <- max(0,S[i]-E[i])
 		data[i,2] <- S[i]
@@ -99,4 +104,5 @@ for (iter in 1: NumIt)
 pdf("BoxPlot_95th_percentile.pdf")
 boxplot(MLEMat,las=1)
 abline(h=b*(-log(1-p))^(1/a),lwd=2,lty=1,col = "red")
+#abline(h=exp(c+sqrt(2*d^2)*erfinv(2*p-1)),lwd=2,lty=1,col = "red")
 dev.off()

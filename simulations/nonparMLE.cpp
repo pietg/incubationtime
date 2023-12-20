@@ -70,12 +70,12 @@ void isoreg(int n1, int **N, int **ind_second, int *index_end, double F[]);
 
 // [[Rcpp::export]]
 
-List NPMLE(int N, NumericMatrix dat0, double bandwidth=2, double percentile=0.95)
+List NPMLE(int N, NumericMatrix dat0, double bandwidth=3, double percentile=0.95)
 {
-    int     i,j,m,n;
+    int     i,j,m,n,ngrid;
     double  h,*tt,*pp,*F;
     double  **data;
-    double  mean,quantile,p;
+    double  mean,quantile,p,SMLE;
     
     h=(double)bandwidth;
     p=(double)percentile;
@@ -107,7 +107,19 @@ List NPMLE(int N, NumericMatrix dat0, double bandwidth=2, double percentile=0.95
     
     m = compute_mle(n,data,F,tt,pp);
     
+    SMLE = bdf(0,15,m,tt,pp,6,h);
+            
     quantile = golden(0,tt[m]+h,m,tt,pp,p,h,criterion2);
+    
+    /*NumericMatrix out0 = NumericMatrix(ngrid+1,2);
+    
+    for (i=0;i<=ngrid;i++)
+    {
+        out0(i,0)=grid[i];
+        out0(i,1)=SMLE[i];
+    }*/
+    
+    double out0 = SMLE;
     
     NumericMatrix out1 = NumericMatrix(m+1,2);
     
@@ -130,7 +142,21 @@ List NPMLE(int N, NumericMatrix dat0, double bandwidth=2, double percentile=0.95
     
     // make the list for the output
     
-    List out = List::create(Named("MLE")=out1,Named("m")=out2,Named("mean")=out3,Named("quantile")=out4);
+    List out = List::create(Named("SMLE")=out0,Named("MLE")=out1,Named("m")=out2,Named("mean")=out3,Named("quantile")=out4);
+    
+    /*ofstream file0_("data.txt");
+    
+    if (file0_.is_open())
+    {
+        for (i=0;i<n;i++)
+        {
+            file0_ << setprecision(11) << setw(20) << data[i][0];
+            file0_ << setprecision(11) <<  setw(20) << data[i][1];
+            file0_ << "\n";
+        }
+        
+        file0_.close();
+    }*/
 
     // free memory
     

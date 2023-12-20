@@ -7,6 +7,7 @@
 
 	NumIt = 1000
 	n = 500
+	p = 0.95
 	
 # data vectors
 	S <- vector("numeric", n)
@@ -18,7 +19,7 @@
 #parameters Weibull distribution
 	a <- 3.035140901
 	b <- 7.0897556
-	
+
 #parameters log-normal distribution
 	c <- 1.763329
 	d <- 0.3728888
@@ -29,7 +30,7 @@
   
 	data <- matrix(0, nrow= n, ncol= 2, byrow = FALSE)
 	MLEMat <- matrix(0, nrow= NumIt, ncol= 3, byrow = FALSE)
-	colnames(MLEMat) <- c("MLE","Weibull","log-normal")
+	colnames(MLEMat) <- c("SMLE","Weibull","log-normal")
 
 
 for (iter in 1: NumIt)
@@ -48,18 +49,16 @@ for (iter in 1: NumIt)
 		y <- runif(1,0,E[i])
 		#u <- runif(1,0,1)
   		#v <- b^(-1/a)*(log(1/(1-c*u)))^(1/a)
-  		v <- rweibull(1,shape=a,scale=b)
-  		#v <- rlnorm(1, meanlog =c, sdlog = d)
+  		#v <- rweibull(1,shape=a,scale=b)
+  		v <- rlnorm(1, meanlog =c, sdlog = d)
 		S[i] <- y+v
 		data[i,1] <- max(0,S[i]-E[i])
 		data[i,2] <- S[i]
 	}
 
 # Compute NPMLE	
-
-	output <- NPMLE(n,data,bandwidth=6*n^(-1/5),percentile=0.95)
-	#mean_NPMLE <- output$quantile
-	mean_NPMLE <- output$mean
+	output <- NPMLE(n,data,bandwidth=3,percentile=0.95)
+	SMLE <- output$SMLE
 
 # provide options for parametric methods	
 	opts <- list( "algorithm"= "NLOPT_LN_COBYLA","xtol_rel"= 1.0e-10, 
@@ -86,26 +85,25 @@ for (iter in 1: NumIt)
     b2 <- res2$solution[2]
 	
 	
- #	estimates of first moments
-	mean_Weibull <- b1*gamma(1+1/a1)
-	mean_lognormal <- exp(a2+0.5*b2^2)
-	
-	#percentile_Weibull <- b1*(-log(1-p))^(1/a1)
-	#percentile_lognormal <- exp(a2+sqrt(2*b2^2)*erfinv(2*p-1))
+ #	values of distribution function
+		
+	MLE_Weibull <- 1-exp(-(6/b1)^a1)
+	MLE_lognormal <- plnorm(6,meanlog = a2, sdlog = b2,lower.tail = TRUE, log.p = FALSE)
+
 
 # if one wants to have the results in a file, "decomment" the following lines
 	
-	#write(mean_NPMLE,file = "mean_MPMLE.txt", ncol =1, append = TRUE)
-	#write(mean_Weibull,file = "mean_Weibull.txt", ncol =1, append = TRUE)
-	#write(mean_lognormal,file = "mean_lognormal.txt", ncol =1, append = TRUE)
+	write(SMLE,file = "SMLE.txt", ncol =1, append = TRUE)
+	write(MLE_Weibull,file = "df_Weibull.txt", ncol =1, append = TRUE)
+	write(MLE_lognormal,file = "df_lognormal.txt", ncol =1, append = TRUE)
 
 #make matrix for box plot	
-	MLEMat[iter,] = c(mean_NPMLE, mean_Weibull,mean_lognormal)
+	MLEMat[iter,] = c(SMLE,MLE_Weibull,MLE_lognormal)
 
 }
 
-pdf("BoxPlot_mean.pdf")
+pdf("BoxPlot_SMLE.pdf")
 boxplot(MLEMat,las=1)
-abline(h=exp(c+0.5*d^2),lwd=2,lty=1,col = "red")
-#abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")
+abline(h=0.5303874,lwd=2,lty=1,col = "red")
+#abline(h=0.4526011,lwd=2,lty=1,col = "red")
 dev.off()
