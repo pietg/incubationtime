@@ -106,6 +106,6 @@ for (iter in 1: NumIt)
 
 pdf("BoxPlot_mean.pdf")
 boxplot(MLEMat,las=1)
-abline(h=exp(c+0.5*d^2),lwd=2,lty=1,col = "red")
-#abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")
+#abline(h=exp(c+0.5*d^2),lwd=2,lty=1,col = "red")
+abline(h=b*gamma(1+1/a),lwd=2,lty=1,col = "red")
 dev.off()
