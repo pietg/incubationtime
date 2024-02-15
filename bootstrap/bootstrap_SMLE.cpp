@@ -2,6 +2,7 @@
 //  Computation of the NPMLE for
 //  the distribution of the incubation time
 //
+
 //  Created by Piet Groeneboom on Novemeber 5, 2020.
 //  Copyright (c) 2020 Piet Groeneboom. All rights reserved.
 
@@ -68,47 +69,52 @@ void weights(int n1, int **N, int **ind_second, int *index_end, double yy[], dou
 void cumsum(int n1, double yy[], double cumw[], double cs[], double grad[], double w[]);
 void convexminorant(int n1, double cumw[], double cs[], double yy[]);
 void isoreg(int n1, int **N, int **ind_second, int *index_end, double F[]);
-void data_bootstrap(int n, int m, double M1, double data_exit[], double **bootstrap_data,double tt[], double pp[], double h, int seed);
+void data_bootstrap(int n, int m, double M1, double data_exit[], double **bootstrap_data,double tt[], double F[], double h, int seed);
 void data_bootstrap(int n, double **data, double **bootstrap_data, int seed);
-double data_smooth(int m, double M1, double tt[], double pp[], double h);
+double data_smooth(int m, double M1, double tt[], double F[], double h);
+double Weibull_df(double a, double b, double M1, double x);
 
 // [[Rcpp::export]]
 
-List ComputeIntervals_df(DataFrame input)
+List ComputeIntervals_df(int N, double M0, int ngrid0, NumericMatrix dat0)
 {
-    int     i,m,m_bootstrap,n,ngrid,NumIt,iter,percentile1,percentile2,seed;
+    int     i,j,m,m_bootstrap,n,ngrid,NumIt,iter,percentile1,percentile2,*percentage,seed;
     double  **data,**bootstrap_data,*data_exit,*tt,*pp,*F,h,h0;
     double  *SMLE,*SMLE1,*F_bootstrap,*SMLE_bootstrap,*pp_bootstrap,*tt_bootstrap;
-    double  M1,*grid,*lowbound,*upbound,**f3,*f4;
-    
-    DataFrame DF = Rcpp::DataFrame(input);
-    NumericVector data01 = DF["V1"];
-    NumericVector data02 = DF["V2"];
+    double  a,b,M1,*grid,*lowbound,*upbound,**f3,*f4;
     
     // determine the sample size
     
-    n = (int)data01.size();
+    n = (int)N;
+    
+    h=3;
+    h0=7;
+    data = new double *[n];
+    for (i=0;i<n;i++)
+        data[i]= new double[2];
+    
+    for (i=0;i<n;i++)
+    {
+        for (j=0;j<2;j++)
+            data[i][j]=(double)dat0(i,j);
+    }
     
     // Number of bootstrap samples
     NumIt = 1000;
     
     // upper bound incubation time
     
-    M1 = 20;
-    seed=1;
+    a=3.035140901;
+    b=0.002619475;
+    
+    M1 = (double)M0;
+    seed=1000;
     
     //h= 0.5*M1*pow(n,-1.0/5);
-    h=3;
-    //h   = 6.216281;
-    //h0  = 0.8*M1*pow(n,-1.0/9);
-    h0=8;
+    //h0  = 0.9*M1*pow(n,-1.0/9);
     
     percentile1=round(0.025*NumIt);
     percentile2=round(0.975*NumIt);
-    
-    data = new double *[n];
-    for (i=0;i<n;i++)
-        data[i]= new double[2];
     
     bootstrap_data = new double *[n];
     for (i=0;i<n;i++)
@@ -118,14 +124,14 @@ List ComputeIntervals_df(DataFrame input)
     data_exit = new double[n];
     
     for (i=0;i<n;i++)
-    {
-        data[i][0]=(double)data01[i];
-        data[i][1]=(double)data02[i];
         data_exit[i]=data[i][1]-data[i][0];
-    }
     
-    ngrid = 100;
+    ngrid = (int)ngrid0;
+    percentage = new int[ngrid+1];
     grid = new double[ngrid+1];
+    
+    for (i=0;i<=ngrid;i++)
+      percentage[i]=0;
                                   
     for (i=0;i<=ngrid;i++)
         grid[i] = M1*i/ngrid;
@@ -150,7 +156,7 @@ List ComputeIntervals_df(DataFrame input)
     SMLE =  new double[ngrid+1];
     SMLE1 =  new double[ngrid+1];
     SMLE_bootstrap =  new double[ngrid+1];
-                                  
+    
     for (i=0;i<=ngrid;i++)
         SMLE[i]= bdf(0.0,M1,m,tt,pp,grid[i],h);
     
@@ -170,7 +176,7 @@ List ComputeIntervals_df(DataFrame input)
     {
         seed++;
         //data_bootstrap(n,data,bootstrap_data,seed);
-        data_bootstrap(n,m,M1,data_exit,bootstrap_data,tt,pp,h0,seed);
+        data_bootstrap(n,m,M1,data_exit,bootstrap_data,tt,F,h0,seed);
         m_bootstrap = compute_mle(n,bootstrap_data,F_bootstrap,tt_bootstrap,pp_bootstrap);
                                   
         for (i=0;i<=ngrid;i++)
@@ -179,7 +185,7 @@ List ComputeIntervals_df(DataFrame input)
         for (i=0;i<=ngrid;i++)
             f3[iter][i]= SMLE_bootstrap[i]-SMLE1[i];
         
-        Rcout << iter+1 << endl;
+        //Rcout << iter+1 << endl;
      }
                                       
                                   
@@ -192,8 +198,22 @@ List ComputeIntervals_df(DataFrame input)
                                       
         lowbound[i] = fmax(0,SMLE[i]-f4[percentile2-1]);
         upbound[i]  = fmax(0,fmin(1,SMLE[i]-f4[percentile1-1]));
+        
+        //lowbound[i] = SMLE[i]-f4[percentile2-1];
+        //upbound[i]  = SMLE[i]-f4[percentile1-1];
+        
+        if (Weibull_df(a,b,M1,grid[i])<lowbound[i] || Weibull_df(a,b,M1,grid[i])>upbound[i])
+            percentage[i]++;
     }
                                   
+    NumericMatrix out0 = NumericMatrix(n+1,2);
+    
+    for (i=0;i<n;i++)
+    {
+        out0(i,0)=data[i][0];
+        out0(i,1)=data[i][1];
+    }
+    
     
     NumericMatrix out1 = NumericMatrix(m+1,2);
     
@@ -205,20 +225,27 @@ List ComputeIntervals_df(DataFrame input)
     
     int out2 = m;
     
-    NumericMatrix out3 = NumericMatrix(ngrid+1,4);
+    NumericMatrix out3 = NumericMatrix(ngrid,4);
     
-    for (i=0;i<=ngrid;i++)
+    for (i=0;i<ngrid;i++)
     {
-        out3(i,0)=grid[i];
-        out3(i,1)=SMLE[i];
-        out3(i,2)=lowbound[i];
-        out3(i,3)=upbound[i];
+        out3(i,0)=grid[i+1];
+        out3(i,1)=SMLE[i+1];
+        out3(i,2)=lowbound[i+1];
+        out3(i,3)=upbound[i+1];
     }
     
+    NumericMatrix out4 = NumericMatrix(ngrid,1);
+    for (i=0;i<ngrid;i++)
+        out4(i,0)=percentage[i+1];
+    
+    NumericMatrix out5 = NumericMatrix(ngrid,1);
+    for (i=0;i<ngrid;i++)
+        out5(i,0)=upbound[i+1]-lowbound[i+1];
  
     // make the list for the output
     
-    List out = List::create(Named("MLE")=out1,Named("m")=out2,Named("CI_df")=out3);
+    List out = List::create(Named("data")=out0,Named("MLE")=out1,Named("m")=out2,Named("CI_df")=out3,Named("percentages")=out4,Named("length_interval")=out5);
 
     // free memory
     
@@ -235,6 +262,7 @@ List ComputeIntervals_df(DataFrame input)
     delete[] f3;
     
     delete[] f4; delete[] lowbound; delete[] upbound;
+    delete[] percentage;
     
     delete[] F; delete[] data_exit;
     delete[] tt; delete[] pp; delete[] tt_bootstrap; delete[] pp_bootstrap;
@@ -244,6 +272,18 @@ List ComputeIntervals_df(DataFrame input)
     return out;
 }
 
+double Weibull_df(double a, double b, double M1, double x)
+{
+    if (x>0 && x<= M1)
+        return (1-exp(-b*pow(x,a)))/(1-exp(-b*pow(M1,a)));
+    else
+    {
+        if (x>M1)
+            return 1;
+        else
+            return 0;
+    }
+}
 int compute_mle(int n, double **data, double F[], double tt[], double pp[])
 {
   int i,j,k,m,n1,**N,*index_end,**ind_second,**N1;
@@ -400,39 +440,6 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
       }
     }
   }
-  
-  /*printf("\n");
-   for (i=0;i<=n1;i++)
-   {
-   printf("%10.5f",tt[i]);
-   for (j=0;j<=index_end[i];j++)
-   printf("%5d",N1[i][j]);
-   printf("\n");
-   }
-   printf("\n");
-   
-   printf("\n");
-   for (i=0;i<=n1;i++)
-   {
-   printf("%10.5f",tt[i]);
-   for (j=0;j<=index_end[i];j++)
-   printf("%5d",ind_second[i][j]);
-   printf("\n");
-   }
-   printf("\n");*/
-  
-  /*printf("\n");
-   for (i=0;i<=n1;i++)
-   {
-   printf("%10.5f",tt[i]);
-   for (j=i+1;j<=n1+1;j++)
-   {
-   if (N[i][j]>0)
-   printf("%5d",N[i][j]);
-   }
-   printf("\n");
-   }
-   printf("\n");*/
   
   F[0]=0.0;
   for (i=1;i<=n1;i++)
@@ -789,7 +796,7 @@ void isoreg(int n1, int **N, int **ind_second, int *index_end, double F[])
         convexminorant(n1,cumw,cs,yy);
 
         alpha=golden(n1,N,ind_second,index_end,F,yy,yy_new,f_alpha);
-        
+
         for (i=1;i<=n1+1;i++)
             F[i] = alpha*yy[i]+(1-alpha)*F[i];
     }
@@ -850,6 +857,7 @@ double bdf(double A, double B, int m, double t[], double p[], double u, double h
         t2=(u+t[k]-2*A)/h;
         t3=(2*B-u-t[k])/h;
         sum+= (KK(t1)+KK(t2)-KK(t3))*p[k];
+        //sum+= KK(t1)*p[k];
     }
     return  fmax(sum,0);
 }
@@ -889,7 +897,7 @@ void data_bootstrap(int n, double **data, double **bootstrap_data, int seed)
     }
 }
 
-void data_bootstrap(int n, int m, double M1, double data_exit[], double **bootstrap_data,double tt[], double pp[], double h, int seed)
+void data_bootstrap(int n, int m, double M1, double data_exit[], double **bootstrap_data,double tt[], double F[], double h, int seed)
 {
     int    i;
     double u,v;
@@ -900,7 +908,7 @@ void data_bootstrap(int n, int m, double M1, double data_exit[], double **bootst
     for (i=0;i<n;i++)
     {
         u=dis_unif(gen);
-        v = data_exit[i]*u+data_smooth(m,M1,tt,pp,h);
+        v = data_exit[i]*u+data_smooth(m,M1,tt,F,h);
         
         if (v > data_exit[i])
         {
@@ -915,30 +923,78 @@ void data_bootstrap(int n, int m, double M1, double data_exit[], double **bootst
     }
 }
 
-double data_smooth(int m, double M1, double tt[], double pp[], double h)
+double data_smooth(int m, double M1, double tt[], double F[], double h)
 {
-    int seed;
-    double v,w;
+    int i,j,seed;
+    double c,x,u,v,w;
     
     w=1;
     seed = rand();
     std::mt19937_64 gen(seed);
     std::uniform_real_distribution<double> dis_unif(0.0,1.0);
 
+    //v = dis_unif(gen);
+    //w = golden(0,tt[m]+h,m,tt,pp,v,h,criterion2);
     
-    v = dis_unif(gen);
-    w = golden(0,fmin(M1,tt[m]+h),m,tt,pp,v,h,criterion2);
+    u = dis_unif(gen);
+    for (i=1;i<=m;i++)
+    {
+        if (F[i-1]< u && u<= F[i])
+            x=tt[i];
+    }
     
-    /*j=0;
+    if (u>= F[m])
+        x=tt[m];
+    
+
+    j=0;
     while (j<1)
     {
-        w=M1*dis_unif(gen);
+        w= 2*dis_unif(gen)-1;
         v=dis_unif(gen);
-        c = dens_estimate(0.0,M1,m,tt,pp,w,h);
-        if (v<c/10)
+        if (v<(16.0/35)*K(w))
             j++;
-    }*/
+    }
     
-    return w;
+    v = x + h*w;
+    
+    if (v < 0)
+      v = -v;
+
+    if (v>M1)
+      v = 2*M1-v;
+    return v;
 }
 
+double dens_estimate(double A, double B,  int m, double t[], double p[], double u, double h)
+{
+  int k;
+  double      t1,t2,t3,sum;
+  
+  sum=0;
+  
+  for (k=1;k<=m;k++)
+  {
+    t1=(u-t[k])/h;
+    t2=(u+t[k]-2*A)/h;
+    t3=(2*B-u-t[k])/h;
+    sum += (K(t1)+K(t2)+K(t3))*p[k]/h;
+    //sum += K(t1)*p[k]/h;
+  }
+  
+  return fmax(0,sum);
+}
+
+double K(double x)
+{
+  double u,y;
+  
+  u=x*x;
+  
+  if (u<=1)
+    y=(35.0/32)*pow(1-u,3);
+  else
+    y=0.0;
+  
+  return y;
+}

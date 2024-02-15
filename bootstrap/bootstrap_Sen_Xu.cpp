@@ -67,6 +67,7 @@ void    sort_data(int n, double data1[], double data2[]);
 void    sort_data0(int m, double data0[], int index0[]);
 void    sort_index(int n, int index1[]);
 double  criterion2(double A, double B, int n1, double tt[], double pp[], double u, double v, double h);
+double Weibull_df(double a, double b, double M1, double x);
 double  golden(double A, double B, int m, double t[], double p[], double v, double h,
               double (*f)(double,double,int,double*,double*,double,double,double));
 double  golden(int n1, double F[], double yy[], double yy_new[],
@@ -77,39 +78,44 @@ double  bdf_conv(double B, int m, double t[], double p[], double u, double h);
 double  KK(double x);
 double  KK2(double x);
 void    data_bootstrap(int n, int n1, double M1, double data3[], double **bootstrap_data,double tt[], double pp[], double h, int seed);
-double  data_smooth(int n1, double M1, double tt[], double pp[], double h);
+double  data_smooth(int n1, double tt[], double pp[], double h);
 
 
 // [[Rcpp::export]]
 
-List ComputeIntervals_df(DataFrame input)
+List ComputeIntervals_df(int N, double M0, int ngrid0, NumericMatrix dat0)
 {
-    int     i,j,k,m,m_bootstrap,n,ngrid,NumIt,iter,percentile1,percentile2,seed;
-    double  **data,**bootstrap_data,*data3,*tt,*pp,*F,h;
+    int     i,j,k,m,m_bootstrap,n,ngrid,NumIt,iter,percentile1,percentile2,*percentage,seed;
+    double  a,b,**data,**bootstrap_data,*data3,*tt,*pp,*F,h;
     double  *MLE,*SMLE,*F_bootstrap,*MLE_bootstrap,*pp_bootstrap,*tt_bootstrap;
     double  M1,*grid,*lowbound,*upbound,**f3,*f4;
     
-    DataFrame DF = Rcpp::DataFrame(input);
-    NumericVector data01 = DF["V1"];
-    NumericVector data02 = DF["V2"];
     
-    M1 = 15;
+    M1 = (double)M0;
     seed=1;
-    h=3;
+    h=5;
     
+    a=3.035140901;
+    b=0.002619475;
     // determine the sample size
     
-    n = (int)data01.size();
+    n = (int)N;
+    
+    data = new double *[n];
+    for (i=0;i<n;i++)
+        data[i]= new double[2];
+    
+    for (i=0;i<n;i++)
+    {
+        for (j=0;j<2;j++)
+            data[i][j]=(double)dat0(i,j);
+    }
     
     // Number of bootstrap samples
     NumIt = 1000;
     
     percentile1=round(0.025*NumIt);
     percentile2=round(0.975*NumIt);
-    
-    data = new double *[n];
-    for (i=0;i<n;i++)
-        data[i]= new double[2];
     
     bootstrap_data = new double *[n];
     for (i=0;i<n;i++)
@@ -119,14 +125,14 @@ List ComputeIntervals_df(DataFrame input)
     data3 = new double[n];
     
     for (i=0;i<n;i++)
-    {
-        data[i][0]=(double)data01[i];
-        data[i][1]=(double)data02[i];
         data3[i]=data[i][1]-data[i][0];
-    }
     
-    ngrid = 150;
+    ngrid = (int)ngrid0;
+    percentage = new int[ngrid+1];
     grid = new double[ngrid+1];
+    
+    for (i=0;i<=ngrid;i++)
+      percentage[i]=0;
                                   
     for (i=0;i<=ngrid;i++)
         grid[i] = M1*i/ngrid;
@@ -196,7 +202,7 @@ List ComputeIntervals_df(DataFrame input)
         for (i=0;i<=ngrid;i++)
             f3[iter][i]= MLE_bootstrap[i]-SMLE[i];
         
-        Rcout << iter+1 << endl;
+        //Rcout << iter+1 << endl;
      }
                                       
                                   
@@ -209,6 +215,9 @@ List ComputeIntervals_df(DataFrame input)
                                       
         lowbound[i] = fmax(0,MLE[i]-f4[percentile2-1]);
         upbound[i]  = fmax(0,fmin(1,MLE[i]-f4[percentile1-1]));
+        
+        if (Weibull_df(a,b,M1,grid[i])<lowbound[i] || Weibull_df(a,b,M1,grid[i])>upbound[i])
+            percentage[i]++;
     }
                                   
     
@@ -232,11 +241,16 @@ List ComputeIntervals_df(DataFrame input)
         out3(i,3)=upbound[i];
     }
     
- 
+    NumericMatrix out4 = NumericMatrix(ngrid,1);
+    for (i=0;i<ngrid;i++)
+        out4(i,0)=percentage[i+1];
+    
+    NumericMatrix out5 = NumericMatrix(ngrid,1);
+    for (i=0;i<ngrid;i++)
+        out5(i,0)=upbound[i+1]-lowbound[i+1];
     // make the list for the output
     
-    List out = List::create(Named("MLE")=out1,Named("m")=out2,Named("CI_df")=out3);
-
+    List out = List::create(Named("MLE")=out1,Named("m")=out2,Named("CI_df")=out3,Named("percentages")=out4,Named("length_interval")=out5);
     // free memory
     
     for (i=0;i<n;i++)
@@ -253,13 +267,25 @@ List ComputeIntervals_df(DataFrame input)
     
     delete[] f4; delete[] lowbound; delete[] upbound;
     
-    delete[] F; delete[] data3;
+    delete[] F; delete[] data3; delete[] percentage;
     delete[] tt; delete[] pp; delete[] tt_bootstrap; delete[] pp_bootstrap;
     delete[] grid; delete[] F_bootstrap; delete[] MLE; delete[] SMLE; delete[] MLE_bootstrap;
     
     return out;
 }
 
+double Weibull_df(double a, double b, double M1, double x)
+{
+    if (x>0 && x<= M1)
+        return (1-exp(-b*pow(x,a)))/(1-exp(-b*pow(M1,a)));
+    else
+    {
+        if (x>M1)
+            return 1;
+        else
+            return 0;
+    }
+}
 
 int compute_mle(int n, double **data, double F[], double tt[], double pp[])
 {
@@ -446,16 +472,15 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
     return m;
 }
                                   
-double data_smooth(int n1, double M1, double tt[], double pp[], double h)
+double data_smooth(int n1, double tt[], double pp[], double h)
 {
-    int j,seed;
+    int seed;
     double v,w;
     
     seed = rand();
     std::mt19937_64 gen(seed);
     std::uniform_real_distribution<double> dis_unif(0.0,1.0);
     
-    j=0;
     w=0;
     
     v = dis_unif(gen);
@@ -476,7 +501,7 @@ void data_bootstrap(int n, int n1, double M1, double data3[], double **bootstrap
     for (i=0;i<n;i++)
     {
         u=dis_unif(gen);
-        v = data3[i]*u+data_smooth(n1,M1,tt,pp,h);
+        v = data3[i]*u+data_smooth(n1,tt,pp,h);
         
         if (v > data3[i])
         {
