@@ -78,7 +78,8 @@ double  bdf_conv(double B, int m, double t[], double p[], double u, double h);
 double  KK(double x);
 double  KK2(double x);
 void    data_bootstrap(int n, int n1, double M1, double data3[], double **bootstrap_data,double tt[], double pp[], double h, int seed);
-double  data_smooth(int n1, double tt[], double pp[], double h);
+double data_smooth(int m, double M1, double tt[], double F[], double h);
+double K(double x);
 
 
 // [[Rcpp::export]]
@@ -185,7 +186,7 @@ List ComputeIntervals_df(int N, double M0, int ngrid0, NumericMatrix dat0)
     for (iter=0;iter<NumIt;iter++)
     {
         seed++;
-        data_bootstrap(n,m,M1,data3,bootstrap_data,tt,pp,h,seed);
+        data_bootstrap(n,m,M1,data3,bootstrap_data,tt,F,h,seed);
         m_bootstrap = compute_mle(n,bootstrap_data,F_bootstrap,tt_bootstrap,pp_bootstrap);
                                   
         for (j=0;j<=ngrid;j++)
@@ -472,25 +473,51 @@ int compute_mle(int n, double **data, double F[], double tt[], double pp[])
     return m;
 }
                                   
-double data_smooth(int n1, double tt[], double pp[], double h)
+double data_smooth(int m, double M1, double tt[], double F[], double h)
 {
-    int seed;
-    double v,w;
+    int i,j,seed;
+    double x,u,v,w;
     
+    w=1;
     seed = rand();
     std::mt19937_64 gen(seed);
     std::uniform_real_distribution<double> dis_unif(0.0,1.0);
+
+    //v = dis_unif(gen);
+    //w = golden(0,tt[m]+h,m,tt,pp,v,h,criterion2);
     
-    w=0;
+    u = dis_unif(gen);
+    for (i=1;i<=m;i++)
+    {
+        if (F[i-1]< u && u<= F[i])
+            x=tt[i];
+    }
     
-    v = dis_unif(gen);
-    w = golden(0,tt[n1]+h,n1,tt,pp,v,h,criterion2);
+    if (u>= F[m])
+        x=tt[m];
     
-    return w;
+
+    j=0;
+    while (j<1)
+    {
+        w= 2*dis_unif(gen)-1;
+        v=dis_unif(gen);
+        if (v<(16.0/35)*K(w))
+            j++;
+    }
+    
+    v = x + h*w;
+    
+    if (v < 0)
+      v = -v;
+
+    if (v>M1)
+      v = 2*M1-v;
+    return v;
 }
 
 
-void data_bootstrap(int n, int n1, double M1, double data3[], double **bootstrap_data,double tt[], double pp[], double h, int seed)
+void data_bootstrap(int n, int n1, double M1, double data3[], double **bootstrap_data,double tt[], double FF[], double h, int seed)
 {
     int    i;
     double u,v;
@@ -501,7 +528,7 @@ void data_bootstrap(int n, int n1, double M1, double data3[], double **bootstrap
     for (i=0;i<n;i++)
     {
         u=dis_unif(gen);
-        v = data3[i]*u+data_smooth(n1,tt,pp,h);
+        v = data3[i]*u+data_smooth(n1,M1,tt,FF,h);
         
         if (v > data3[i])
         {
@@ -937,6 +964,20 @@ double KK2(double x)
   
   if (x>=0 && x<2)
     y = 0.5 + 350*x/429.0 - 35*pow(x,3)/66.0 + 7*pow(x,5)/24.0 - 5*pow(x,7)/32.0 + 35*pow(x,8)/512.0 - 7*pow(x,10)/1536.0 + 35*pow(x,12)/135168.0 - 25*pow(x,14)/3514368.0;
+  
+  return y;
+}
+
+double K(double x)
+{
+  double u,y;
+  
+  u=x*x;
+  
+  if (u<=1)
+    y=(35.0/32)*pow(1-u,3);
+  else
+    y=0.0;
   
   return y;
 }
